@@ -325,7 +325,9 @@ export class App extends Component {
 			this.state.minDepthValid &&
 			this.state.minFreqValid &&
 			this.state.ambigSymbolValid &&
-			this.state.trimFront1Valid;
+			this.state.trimFront1Valid && 
+			this.state.trimTail1Valid &&
+			this.state.fastpCompressionLevelValid;
 
 		this.setState({ refFileValid, alignmentFilesValid })
 
@@ -386,7 +388,7 @@ export class App extends Component {
 			} else if (this.state.alignmentFilesAreFASTQ) {
 				// Handle fastq files, need to run minimap2 (already handled in the declaration of command)
 				LOG("Recognized alignment file(s) as FASTQ, reading file...")
-				const fastpOutputFile = this.state.trimInput ? FASTP_OUTPUT_FILE_NAME : COMBINED_SEQUENCES_FILE_NAME;
+				const sequencesFile = this.state.trimInput ? FASTP_OUTPUT_FILE_NAME : COMBINED_SEQUENCES_FILE_NAME;
 
 				// Add additional alignment files (fastq files)
 				for (let i = 0; i < this.state.alignmentFiles.length; i++) {
@@ -401,13 +403,13 @@ export class App extends Component {
 					if (this.state.trimInput) {
 						alignmentFileData = await this.trimInput(alignmentFileData)
 					}
-					await CLI.fs.writeFile(fastpOutputFile, new Uint8Array(alignmentFileData), { flags: 'a' });
+					await CLI.fs.writeFile(sequencesFile, new Uint8Array(alignmentFileData), { flags: 'a' });
 				}
 				await this.deleteFile(TEMP_FASTP_INPUT);
 				await this.deleteFile(TEMP_FASTP_OUTPUT);
 
 				await CLI.fs.writeFile(MINIMAP_OUTPUT_FILE_NAME, new Uint8Array());
-				const minimapCommand = `minimap2 -t 1 -a -o ${MINIMAP_OUTPUT_FILE_NAME} ${refFileName} ${fastpOutputFile}`;
+				const minimapCommand = `minimap2 -t 1 -a -o ${MINIMAP_OUTPUT_FILE_NAME} ${refFileName} ${sequencesFile}`;
 				LOG("Executing command: " + minimapCommand);
 				await CLI.exec(minimapCommand);
 			} else {
