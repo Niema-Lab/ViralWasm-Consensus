@@ -384,7 +384,7 @@ export class App extends Component {
 				uploadedFileName.endsWith('.sam')) {
 				// Handle bam/sam files, don't need to run minimap2 
 				LOG("Recognized alignment file as BAM/SAM, reading file...")
-				await CLI.fs.writeFile(alignmentFileName, new Uint8Array(alignmentFileData), { flags: 'w+' });
+				await CLI.fs.writeFile(alignmentFileName, new Uint8Array(alignmentFileData));
 			} else if (this.state.alignmentFilesAreFASTQ) {
 				// Handle fastq files, need to run minimap2 (already handled in the declaration of command)
 				LOG("Recognized alignment file(s) as FASTQ, reading file...")
@@ -415,6 +415,7 @@ export class App extends Component {
 			} else {
 				// Handle other file types, assuming bam/sam, but giving a warning
 				LOG("WARNING: Alignment file extension not recognized. Assuming bam/sam format.")
+				await CLI.fs.writeFile(alignmentFileName, new Uint8Array(alignmentFileData));
 			}
 		}
 
