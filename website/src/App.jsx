@@ -565,7 +565,7 @@ export class App extends Component {
 	render() {
 		return (
 			<div className="App pb-5">
-				<h2 className="mt-5 mb-2 w-100 text-center">ViralConsensus {this.state.version}</h2>
+				<h2 className="mt-5 mb-2 w-100 text-center">ViralWasm-Consensus {this.state.version}</h2>
 				<p className="my-3 w-100 text-center">Web-based implementation of <a href="https://www.github.com/niemasd/ViralConsensus" target="_blank" rel="noreferrer">ViralConsensus</a> using WebAssembly and <a href="https://biowasm.com/" target="_blank" rel="noreferrer">Biowasm</a>.<br /><br /></p>
 				<div className="mt-3" id="container">
 					<div id="input" className="ms-5 me-4">
