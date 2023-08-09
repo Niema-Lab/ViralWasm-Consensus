@@ -1,4 +1,3 @@
-// TODO: incorporate relevant fixes into master branch
 import React, { Component } from 'react'
 import Pako from 'pako';
 
@@ -37,6 +36,7 @@ export class App extends Component {
 		this.state = {
 			version: '',
 
+			// ------- User input -------
 			refFile: undefined,
 			exampleRefFile: undefined,
 			refFileValid: true,
@@ -46,6 +46,7 @@ export class App extends Component {
 			alignmentFilesValid: true,
 			exampleAlignmentFile: undefined,
 
+			// ------- Fastp input -------
 			trimInput: false,
 
 			fastpCompressionLevel: 9,
@@ -63,6 +64,7 @@ export class App extends Component {
 			trimPolyG: false,
 			trimPolyX: false,
 
+			// ------- ViralConsensus additional arguments -------
 			primerFile: undefined,
 			primerFileValid: true,
 
@@ -89,6 +91,7 @@ export class App extends Component {
 			genPosCounts: false,
 			genInsCounts: false,
 
+			// ------- Biowasm & output states -------
 			CLI: undefined,
 			done: false,
 			consensusExists: false,
@@ -125,6 +128,7 @@ export class App extends Component {
 		}
 	}
 
+	// Fetch example file data (only once on mount)
 	fetchExampleFiles = async () => {
 		const exampleRefFile = await (await fetch(EXAMPLE_REF_FILE)).text();
 		const exampleAlignmentFile = await (await fetch(EXAMPLE_ALIGNMENT_FILE)).arrayBuffer();
@@ -132,6 +136,7 @@ export class App extends Component {
 		this.setState({ exampleRefFile, exampleAlignmentFile: exampleAlignmentFile })
 	}
 
+	// Fetch and load ViralConsensus default values and version 
 	loadDefaultsAndVersion = async () => {
 		const defaultTextFile = await (await fetch(DEFAULT_VALS_FILE)).text();
 		const defaultText = [...defaultTextFile.matchAll(/#define DEFAULT.*$/gm)].map((line) => line[0].split(' '));
@@ -325,7 +330,7 @@ export class App extends Component {
 			this.state.minDepthValid &&
 			this.state.minFreqValid &&
 			this.state.ambigSymbolValid &&
-			this.state.trimFront1Valid && 
+			this.state.trimFront1Valid &&
 			this.state.trimTail1Valid &&
 			this.state.fastpCompressionLevelValid;
 
@@ -566,7 +571,7 @@ export class App extends Component {
 		return (
 			<div className="App pb-5">
 				<h2 className="mt-5 mb-2 w-100 text-center">ViralWasm-Consensus {this.state.version}</h2>
-				<p className="my-3 w-100 text-center">Web-based implementation of <a href="https://www.github.com/niemasd/ViralConsensus" target="_blank" rel="noreferrer">ViralConsensus</a> using WebAssembly and <a href="https://biowasm.com/" target="_blank" rel="noreferrer">Biowasm</a>.<br /><br /></p>
+				<p className="my-3 w-100 text-center">A web-based pipeline {"[minimap2 -> fastp -> ViralConsensus]"} for consensus genome generation using WebAssembly and <a href="https://biowasm.com/" target="_blank" rel="noreferrer">Biowasm</a>.<br /><br /></p>
 				<div className="mt-3" id="container">
 					<div id="input" className="ms-5 me-4">
 						<h5 className="mb-3">Input</h5>

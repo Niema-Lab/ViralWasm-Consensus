@@ -23,17 +23,6 @@ export const CONSENSUS_FILE_NAME = BIOWASM_WORKING_DIR + 'consensus.fa';
 export const POSITION_COUNTS_FILE_NAME = BIOWASM_WORKING_DIR + 'positionCounts.tsv';
 export const INSERTION_COUNTS_FILE_NAME = BIOWASM_WORKING_DIR + 'insertionCounts.json';
 
-export const CLEAR_LOG = () => {
-	const textArea = document.getElementById(OUTPUT_ID);
-	textArea.value = "";
-}
-
-export const LOG = (output) => {
-	const textArea = document.getElementById(OUTPUT_ID);
-	const date = new Date();
-	textArea.value += `${getTimeWithMilliseconds(date)}: ` + output + "\n";
-}
-
 export const ARE_FASTQ = (files) => {
 	if (files === undefined || files.length === 0) {
 		return false;
@@ -65,6 +54,17 @@ export const IS_GZIP = (arrayBuffer) => {
 
 export const INPUT_IS_NONNEG_INTEGER = (input, lowBound = 0, upperBound = Number.MAX_SAFE_INTEGER) => {
 	return (input === '' || (input >= lowBound && input <= upperBound && input == parseInt(input)))
+}
+
+export const CLEAR_LOG = () => {
+	const textArea = document.getElementById(OUTPUT_ID);
+	textArea.value = "";
+}
+
+export const LOG = (output) => {
+	const textArea = document.getElementById(OUTPUT_ID);
+	const date = new Date();
+	textArea.value += `${getTimeWithMilliseconds(date)}: ` + output + "\n";
 }
 
 export const getTimeWithMilliseconds = date => {
