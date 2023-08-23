@@ -36,6 +36,9 @@ export class App extends Component {
 		this.state = {
 			version: '',
 
+			expandedContainer: undefined,
+			additionalArgsOpen: false,
+
 			// ------- User input -------
 			refFile: undefined,
 			exampleRefFile: undefined,
@@ -291,6 +294,12 @@ export class App extends Component {
 		this.setState({ genInsCounts: e.target.checked, inputChanged: true })
 	}
 
+	toggleAdditionalArgs = (open = undefined) => {
+		this.setState(prevState => {
+			return { additionalArgsOpen: open === undefined ? !prevState.additionalArgsOpen : open }
+		})
+	}
+
 	toggleLoadExampleData = () => {
 		this.setState(prevState => {
 			const refFile = (prevState.refFile === 'EXAMPLE_DATA' || prevState.alignmentFiles === 'EXAMPLE_DATA') ? document.getElementById('reference-file')?.files[0] : 'EXAMPLE_DATA';
@@ -305,6 +314,12 @@ export class App extends Component {
 				inputChanged: prevState.refFile !== refFile || prevState.alignmentFiles !== alignmentFiles
 			}
 		})
+	}
+
+	toggleExpandContainer = (container) => {
+		this.setState(prevState => {
+			return { expandedContainer: prevState.expandedContainer === container ? undefined : container }
+		});
 	}
 
 	validInput = () => {
@@ -571,145 +586,154 @@ export class App extends Component {
 		return (
 			<div className="App pb-5">
 				<h2 className="mt-5 mb-2 w-100 text-center">ViralWasm-Consensus {this.state.version}</h2>
-				<p className="my-3 w-100 text-center">A web-based pipeline {"[minimap2 -> fastp -> ViralConsensus]"} for consensus genome generation using WebAssembly and <a href="https://biowasm.com/" target="_blank" rel="noreferrer">Biowasm</a>.<br /><br /></p>
+				<p className="my-3 w-100 text-center">A serverless WebAssembly-based pipeline for consensus genome generation. Uses minimap2, fastp, and ViralConsensus via <a href="https://biowasm.com/" target="_blank" rel="noreferrer">Biowasm</a>. <br /><br /></p>
 				<div className="mt-3" id="container">
-					<div id="input" className="ms-5 me-4">
-						<h5 className="mb-3">Input</h5>
-						<div className="d-flex flex-column mb-4">
-							<label htmlFor="reference-file" className="form-label">Reference File (FASTA){this.state.refFile === 'EXAMPLE_DATA' && <span><strong>: Using example <a href={EXAMPLE_REF_FILE} target="_blank" rel="noreferrer">reference file</a>.</strong></span>}<span className="text-danger"> *</span></label>
-							<input className={`form-control ${!this.state.refFileValid && 'is-invalid'}`} type="file" id="reference-file" onChange={this.uploadRefFile} />
+					<div id="input" className={`ms-5 me-4 ${this.state.expandedContainer === 'input' && 'full-width-container'} ${this.state.expandedContainer === 'output' && 'd-none'}`}>
+						<div id="input-header" className="mb-3">
+							<h5 className="my-0">Input</h5>
+							<h4 className="my-0">
+								<i className={`bi bi-${this.state.expandedContainer === 'input' ? 'arrows-angle-contract' : 'arrows-fullscreen'}`} onClick={() => this.toggleExpandContainer('input')}></i>
+							</h4>
 						</div>
-
-						<div className="d-flex flex-column mb-4">
-							<label htmlFor="alignment-files" className="form-label">Upload Input Reads File(s) (BAM, SAM, FASTQ(s)){this.state.alignmentFiles === 'EXAMPLE_DATA' && <span><strong>: Using example <a href={EXAMPLE_ALIGNMENT_FILE} target="_blank" rel="noreferrer">BAM file</a>.</strong></span>}<span className="text-danger"> *</span></label>
-							<input className={`form-control ${!this.state.alignmentFilesValid && 'is-invalid'}`} type="file" multiple accept=".sam,.bam,.fastq,.fastq.gz,.fq,.fq.gz" id="alignment-files" onChange={this.uploadAlignmentFiles} />
-						</div>
-
-						{/* NOTE: we assume here that if they upload more than one file, they are intending to upload multiple FASTQ files */}
-						{typeof this.state.alignmentFiles === 'object' && this.state.alignmentFiles.length > 0 &&
-							<div id="alignment-files-list" className={`d-flex flex-column mb-4`}>
-								<p>Uploaded Input Reads Files (If multiple files, must all be FASTQ):</p>
-								<ul className="list-group">
-									{this.state.alignmentFiles.map((file, i) => {
-										const validFile = !ARE_FASTQ([file]) && this.state.alignmentFiles.length !== 1;
-										return (
-											<li key={i} className={`list-group-item d-flex justify-content-between ${validFile && 'text-danger'}`}>
-												<div>
-													{file.name}
-												</div>
-												<div>
-													<i className="bi bi-trash text-danger cursor-pointer" onClick={() => this.deleteAlignmentFile(i)}></i>
-													{validFile &&
-														<i className="bi bi-exclamation-circle ms-3"></i>
-													}
-												</div>
-											</li>
-										)
-									})}
-								</ul>
-								<button className="btn btn-danger mt-3" onClick={this.clearAlignmentFiles}>Clear Input Reads Files</button>
+						<div id="input-content">
+							<div className="d-flex flex-column mb-4">
+								<label htmlFor="reference-file" className="form-label">Reference File (FASTA){this.state.refFile === 'EXAMPLE_DATA' && <span><strong>: Using example <a href={EXAMPLE_REF_FILE} target="_blank" rel="noreferrer">reference file</a>.</strong></span>}<span className="text-danger"> *</span></label>
+								<input className={`form-control ${!this.state.refFileValid && 'is-invalid'}`} type="file" id="reference-file" onChange={this.uploadRefFile} />
 							</div>
-						}
 
-						<div className='form-check mb-4' style={{ opacity: (typeof this.state.alignmentFiles === 'object' && (this.state.alignmentFiles.length > 1 || this.state.alignmentFilesAreFASTQ)) ? 1 : 0.5 }}>
-							<label className="form-check-label" htmlFor="trim-input-fastq">
-								Trim Input FASTQ Sequences
-							</label>
-							<input className="form-check-input" type="checkbox" name="trim-input-fastq" id="trim-input-fastq" checked={this.state.trimInput} onChange={this.setTrimInput} disabled={!(typeof this.state.alignmentFiles === 'object' && (this.state.alignmentFiles.length > 1 || this.state.alignmentFilesAreFASTQ))} />
-						</div>
+							<div className="d-flex flex-column mb-4">
+								<label htmlFor="alignment-files" className="form-label">Upload Input Reads File(s) (BAM, SAM, FASTQ(s)){this.state.alignmentFiles === 'EXAMPLE_DATA' && <span><strong>: Using example <a href={EXAMPLE_ALIGNMENT_FILE} target="_blank" rel="noreferrer">BAM file</a>.</strong></span>}<span className="text-danger"> *</span></label>
+								<input className={`form-control ${!this.state.alignmentFilesValid && 'is-invalid'}`} type="file" multiple accept=".sam,.bam,.fastq,.fastq.gz,.fq,.fq.gz" id="alignment-files" onChange={this.uploadAlignmentFiles} />
+							</div>
 
-						<div className={`accordion accordion-flush mb-3 ${this.state.trimInput ? '' : 'd-none'}`} id="trim-args">
-							<div className="accordion-item">
-								<h2 className="accordion-header">
-									<button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#trim-args-collapse" aria-expanded="false" aria-controls="trim-args-collapse">
-										Fastp Trim Arguments
-									</button>
-								</h2>
-								<div id="trim-args-collapse" className="accordion-collapse collapse pt-4" data-bs-parent="#trim-args">
-									<label htmlFor="fastp-compression-level" className="form-label">Compression Level (1-9)</label>
-									<input id="fastp-compression-level" className={`form-control ${!this.state.fastpCompressionLevelValid && 'is-invalid'}`} type="number" placeholder="Compression Level" value={this.state.fastpCompressionLevel} onChange={this.setFastpCompressionLevel} />
-									<div className="form-text mb-4">Compression level for gzip output (1-9). 1 is fastest, 9 is smallest (default: {this.state.fastpCompressionLevelDefault})</div>
+							{/* NOTE: we assume here that if they upload more than one file, they are intending to upload multiple FASTQ files */}
+							{typeof this.state.alignmentFiles === 'object' && this.state.alignmentFiles.length > 0 &&
+								<div id="alignment-files-list" className={`d-flex flex-column mb-4`}>
+									<p>Uploaded Input Reads Files (If multiple files, must all be FASTQ):</p>
+									<ul className="list-group">
+										{this.state.alignmentFiles.map((file, i) => {
+											const validFile = !ARE_FASTQ([file]) && this.state.alignmentFiles.length !== 1;
+											return (
+												<li key={i} className={`list-group-item d-flex justify-content-between ${validFile && 'text-danger'}`}>
+													<div>
+														{file.name}
+													</div>
+													<div>
+														<i className="bi bi-trash text-danger cursor-pointer" onClick={() => this.deleteAlignmentFile(i)}></i>
+														{validFile &&
+															<i className="bi bi-exclamation-circle ms-3"></i>
+														}
+													</div>
+												</li>
+											)
+										})}
+									</ul>
+									<button className="btn btn-danger mt-3" onClick={this.clearAlignmentFiles}>Clear Input Reads Files</button>
+								</div>
+							}
 
-									<label htmlFor="trim-front-1" className="form-label"># of Bases to Trim (Front)</label>
-									<input id="trim-front-1" className={`form-control ${!this.state.trimFront1Valid && 'is-invalid'}`} type="number" placeholder="# of Bases to Trim (Front)" value={this.state.trimFront1} onChange={this.setTrimFront1} />
-									<div className="form-text mb-4">Number of bases to trim in the front of every read (default: {this.state.trimFront1Default})</div>
+							<div className='form-check mb-4' style={{ opacity: (typeof this.state.alignmentFiles === 'object' && (this.state.alignmentFiles.length > 1 || this.state.alignmentFilesAreFASTQ)) ? 1 : 0.5 }}>
+								<label className="form-check-label" htmlFor="trim-input-fastq">
+									Trim Input FASTQ Sequences
+								</label>
+								<input className="form-check-input" type="checkbox" name="trim-input-fastq" id="trim-input-fastq" checked={this.state.trimInput} onChange={this.setTrimInput} disabled={!(typeof this.state.alignmentFiles === 'object' && (this.state.alignmentFiles.length > 1 || this.state.alignmentFilesAreFASTQ))} />
+							</div>
 
-									<label htmlFor="trim-tail-1" className="form-label"># of Bases to Trim (Tail)</label>
-									<input id="trim-tail-1" className={`form-control ${!this.state.trimTail1Valid && 'is-invalid'}`} type="number" placeholder="# of Bases to Trim (Tail)" value={this.state.trimTail1} onChange={this.setTrimTail1} />
-									<div className="form-text mb-4">Number of bases to trim in the tail of every read (default: {this.state.trimTail1Default})</div>
+							<div className={`accordion accordion-flush mb-3 ${this.state.trimInput ? '' : 'd-none'}`} id="trim-args">
+								<div className="accordion-item">
+									<h2 className="accordion-header">
+										<button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#trim-args-collapse" aria-expanded="false" aria-controls="trim-args-collapse">
+											Fastp Trim Arguments
+										</button>
+									</h2>
+									<div id="trim-args-collapse" className="accordion-collapse collapse pt-4" data-bs-parent="#trim-args">
+										<label htmlFor="fastp-compression-level" className="form-label">Compression Level (1-9)</label>
+										<input id="fastp-compression-level" className={`form-control ${!this.state.fastpCompressionLevelValid && 'is-invalid'}`} type="number" placeholder="Compression Level" value={this.state.fastpCompressionLevel} onChange={this.setFastpCompressionLevel} />
+										<div className="form-text mb-4">Compression level for gzip output (1-9). 1 is fastest, 9 is smallest (default: {this.state.fastpCompressionLevelDefault})</div>
 
-									<div className="form-check mb-4">
-										<label className="form-check-label" htmlFor="trim-poly-g">
-											Force PolyG Tail Trimming <span style={{ fontSize: '0.75rem' }}>(automatically enabled for Illumina NextSeq/NovaSeq data)</span>
-										</label>
-										<input className="form-check-input" type="checkbox" name="trim-poly-g" id="trim-poly-g" checked={this.state.trimPolyG} onChange={this.setTrimPolyG} />
+										<label htmlFor="trim-front-1" className="form-label"># of Bases to Trim (Front)</label>
+										<input id="trim-front-1" className={`form-control ${!this.state.trimFront1Valid && 'is-invalid'}`} type="number" placeholder="# of Bases to Trim (Front)" value={this.state.trimFront1} onChange={this.setTrimFront1} />
+										<div className="form-text mb-4">Number of bases to trim in the front of every read (default: {this.state.trimFront1Default})</div>
+
+										<label htmlFor="trim-tail-1" className="form-label"># of Bases to Trim (Tail)</label>
+										<input id="trim-tail-1" className={`form-control ${!this.state.trimTail1Valid && 'is-invalid'}`} type="number" placeholder="# of Bases to Trim (Tail)" value={this.state.trimTail1} onChange={this.setTrimTail1} />
+										<div className="form-text mb-4">Number of bases to trim in the tail of every read (default: {this.state.trimTail1Default})</div>
+
+										<div className="form-check mb-4">
+											<label className="form-check-label" htmlFor="trim-poly-g">
+												Force PolyG Tail Trimming <span style={{ fontSize: '0.75rem' }}>(automatically enabled for Illumina NextSeq/NovaSeq data)</span>
+											</label>
+											<input className="form-check-input" type="checkbox" name="trim-poly-g" id="trim-poly-g" checked={this.state.trimPolyG} onChange={this.setTrimPolyG} />
+										</div>
+										<div className="form-check mb-4">
+											<label className="form-check-label" htmlFor="trim-poly-x">
+												Enable PolyX Trimming in 3' Ends.
+											</label>
+											<input className="form-check-input" type="checkbox" name="trim-poly-x" id="trim-poly-x" checked={this.state.trimPolyX} onChange={this.setTrimPolyX} />
+										</div>
 									</div>
-									<div className="form-check mb-4">
-										<label className="form-check-label" htmlFor="trim-poly-x">
-											Enable PolyX Trimming in 3' Ends.
-										</label>
-										<input className="form-check-input" type="checkbox" name="trim-poly-x" id="trim-poly-x" checked={this.state.trimPolyX} onChange={this.setTrimPolyX} />
-									</div>
+								</div>
+							</div>
+
+							<h6 className="mt-5" id="additional-arguments" onClick={() => this.toggleAdditionalArgs()}>ViralConsensus Additional Arguments <i className={`bi bi-chevron-${this.state.tn93Open ? 'up' : 'down'}`}></i></h6>
+							<hr></hr>
+
+							<div className={`${this.state.additionalArgsOpen ? '' : 'd-none'}`}>
+
+								<div className="d-flex flex-column mb-4">
+									<label htmlFor="primer-file" className="form-label">Primer (BED) File</label>
+									<input className="form-control" type="file" id="primer-file" onChange={this.uploadPrimerFile} />
+								</div>
+
+								<label htmlFor="min-base-quality" className="form-label">Primer Offset</label>
+								<input id="primer-offset" className={`form-control ${!this.state.primerOffsetValid && 'is-invalid'}`} type="number" placeholder="Primer Offset" value={this.state.primerOffset} onChange={this.setPrimerOffset} />
+								<div className="form-text mb-4">Number of bases after primer to also trim (default: {this.state.primerOffsetDefault})</div>
+
+								<label htmlFor="min-base-quality" className="form-label">Minimum Base Quality</label>
+								<input id="min-base-quality" className={`form-control ${!this.state.minBaseQualityValid && 'is-invalid'}`} type="number" placeholder="Minimum Base Quality" value={this.state.minBaseQuality} onChange={this.setMinBaseQuality} />
+								<div className="form-text mb-4">Min. base quality to count base in counts (default: {this.state.minBaseQualityDefault})</div>
+
+								<label htmlFor="min-depth" className="form-label">Minimum Depth</label>
+								<input id="min-depth" className={`form-control ${!this.state.minDepthValid && 'is-invalid'}`} type="number" placeholder="Minimum Depth" value={this.state.minDepth} onChange={this.setMinDepth} />
+								<div className="form-text mb-4">Min. depth to call base in consensus (default: {this.state.minDepthDefault})</div>
+
+								<label htmlFor="min-freq" className="form-label">Minimum Frequency</label>
+								<input id="min-freq" className={`form-control ${!this.state.minFreqValid && 'is-invalid'}`} type="number" placeholder="Minimum Frequency" value={this.state.minFreq} onChange={this.setMinFreq} />
+								<div className="form-text mb-4">Min. frequency to call base/insertion in consensus (default: {this.state.minFreqDefault})</div>
+
+								<label htmlFor="ambig-symbol" className="form-label">Ambiguous Symbol</label>
+								<input id="ambig-symbol" className={`form-control ${!this.state.ambigSymbolValid && 'is-invalid'}`} type="text" placeholder="Ambiguous Symbol" value={this.state.ambigSymbol} onChange={this.setAmbigSymbol} />
+								<div className="form-text mb-4">Symbol to use for ambiguous bases (default: {this.state.ambigSymbolDefault})</div>
+
+								<div className="form-check mb-4">
+									<label className="form-check-label" htmlFor="output-pos-counts">
+										Generate Position Counts
+									</label>
+									<input className="form-check-input" type="checkbox" name="output-pos-counts" id="output-pos-counts" checked={this.state.genPosCounts} onChange={this.setGenPosCounts} />
+								</div>
+								<div className="form-check">
+									<label className="form-check-label" htmlFor="output-ins-counts">
+										Generate Insertion Counts
+									</label>
+									<input className="form-check-input" type="checkbox" name="output-ins-counts" id="output-ins-counts" checked={this.state.genInsCounts} onChange={this.setGenInsCounts} />
 								</div>
 							</div>
 						</div>
 
-						<button type="button" className={`btn btn-${(this.state.alignmentFiles === 'EXAMPLE_DATA' || this.state.refFile === 'EXAMPLE_DATA') ? 'success' : 'warning'} mt-3`} onClick={this.toggleLoadExampleData}>
+						<button type="button" className={`w-100 btn btn-${(this.state.alignmentFiles === 'EXAMPLE_DATA' || this.state.refFile === 'EXAMPLE_DATA') ? 'success' : 'warning'} mt-3`} onClick={this.toggleLoadExampleData}>
 							Load Example Data Files {(this.state.alignmentFiles === 'EXAMPLE_DATA' || this.state.refFile === 'EXAMPLE_DATA') && <strong>(Currently Using Example Files!)</strong>}
 						</button>
 
-						<div className="accordion accordion-flush my-5" id="optional-args">
-							<div className="accordion-item">
-								<h2 className="accordion-header">
-									<button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#opt-args-collapse" aria-expanded="false" aria-controls="opt-args-collapse">
-										ViralConsensus Additional Arguments
-									</button>
-								</h2>
-								<div id="opt-args-collapse" className="accordion-collapse collapse pt-4" data-bs-parent="#optional-args">
-									<div className="d-flex flex-column mb-4">
-										<label htmlFor="primer-file" className="form-label">Primer (BED) File</label>
-										<input className="form-control" type="file" id="primer-file" onChange={this.uploadPrimerFile} />
-									</div>
-
-									<label htmlFor="min-base-quality" className="form-label">Primer Offset</label>
-									<input id="primer-offset" className={`form-control ${!this.state.primerOffsetValid && 'is-invalid'}`} type="number" placeholder="Primer Offset" value={this.state.primerOffset} onChange={this.setPrimerOffset} />
-									<div className="form-text mb-4">Number of bases after primer to also trim (default: {this.state.primerOffsetDefault})</div>
-
-									<label htmlFor="min-base-quality" className="form-label">Minimum Base Quality</label>
-									<input id="min-base-quality" className={`form-control ${!this.state.minBaseQualityValid && 'is-invalid'}`} type="number" placeholder="Minimum Base Quality" value={this.state.minBaseQuality} onChange={this.setMinBaseQuality} />
-									<div className="form-text mb-4">Min. base quality to count base in counts (default: {this.state.minBaseQualityDefault})</div>
-
-									<label htmlFor="min-depth" className="form-label">Minimum Depth</label>
-									<input id="min-depth" className={`form-control ${!this.state.minDepthValid && 'is-invalid'}`} type="number" placeholder="Minimum Depth" value={this.state.minDepth} onChange={this.setMinDepth} />
-									<div className="form-text mb-4">Min. depth to call base in consensus (default: {this.state.minDepthDefault})</div>
-
-									<label htmlFor="min-freq" className="form-label">Minimum Frequency</label>
-									<input id="min-freq" className={`form-control ${!this.state.minFreqValid && 'is-invalid'}`} type="number" placeholder="Minimum Frequency" value={this.state.minFreq} onChange={this.setMinFreq} />
-									<div className="form-text mb-4">Min. frequency to call base/insertion in consensus (default: {this.state.minFreqDefault})</div>
-
-									<label htmlFor="ambig-symbol" className="form-label">Ambiguous Symbol</label>
-									<input id="ambig-symbol" className={`form-control ${!this.state.ambigSymbolValid && 'is-invalid'}`} type="text" placeholder="Ambiguous Symbol" value={this.state.ambigSymbol} onChange={this.setAmbigSymbol} />
-									<div className="form-text mb-4">Symbol to use for ambiguous bases (default: {this.state.ambigSymbolDefault})</div>
-
-									<div className="form-check mb-4">
-										<label className="form-check-label" htmlFor="output-pos-counts">
-											Generate Position Counts
-										</label>
-										<input className="form-check-input" type="checkbox" name="output-pos-counts" id="output-pos-counts" checked={this.state.genPosCounts} onChange={this.setGenPosCounts} />
-									</div>
-									<div className="form-check">
-										<label className="form-check-label" htmlFor="output-ins-counts">
-											Generate Insertion Counts
-										</label>
-										<input className="form-check-input" type="checkbox" name="output-ins-counts" id="output-ins-counts" checked={this.state.genInsCounts} onChange={this.setGenInsCounts} />
-									</div>
-								</div>
-							</div>
-						</div>
-						<button type="button" className="btn btn-primary" onClick={this.runViralConsensus}>Submit</button>
+						<button type="button" className="btn btn-primary w-100 mt-3" onClick={this.runViralConsensus}>Submit</button>
 					</div>
-					<div id="output" className="form-group ms-4 me-5">
-						<label htmlFor="output-text" className="mb-3"><h5>Console</h5></label>
+
+					<div id="output" className={`form-group ms-4 me-5 ${this.state.expandedContainer === 'output' && 'full-width-container'} ${this.state.expandedContainer === 'input' && 'd-none'}`}>
+						<div id="output-header" className="mb-3">
+							<label htmlFor="output-text"><h5 className="my-0">Console</h5></label>
+							<h4 className="my-0">
+								<i className={`bi bi-${this.state.expandedContainer === 'output' ? 'arrows-angle-contract' : 'arrows-fullscreen'}`} onClick={() => this.toggleExpandContainer('output')}></i>
+							</h4>
+						</div>
 						<textarea className="form-control" id="output-text" rows="3" disabled></textarea>
 						{this.state.loading && <img id="loading" className="mt-3" src={loading} />}
 						{(this.state.done && (this.state.consensusExists || this.state.posCountsExists || this.state.insCountsExists) &&
