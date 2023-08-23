@@ -22,6 +22,54 @@ export const DEFAULT_VALS_MAPPING = {
 export const CONSENSUS_FILE_NAME = BIOWASM_WORKING_DIR + 'consensus.fa';
 export const POSITION_COUNTS_FILE_NAME = BIOWASM_WORKING_DIR + 'positionCounts.tsv';
 export const INSERTION_COUNTS_FILE_NAME = BIOWASM_WORKING_DIR + 'insertionCounts.json';
+export const DEFAULT_INPUT_STATE = {
+	fastpOpen: false,
+
+	// ------- User input -------
+	refFile: undefined,
+	refFileValid: true,
+
+	alignmentFiles: undefined,
+	alignmentFilesAreFASTQ: false,
+	alignmentFilesValid: true,
+
+	// ------- Fastp input -------
+	trimInput: false,
+
+	fastpCompressionLevel: 9,
+	fastpCompressionLevelValid: true,
+
+	trimFront1: 0,
+	trimFront1Valid: true,
+
+	trimTail1: 0,
+	trimTail1Valid: true,
+
+	trimPolyG: false,
+	trimPolyX: false,
+
+	// ------- ViralConsensus additional arguments -------
+	primerFile: undefined,
+	primerFileValid: true,
+
+	primerOffset: 0,
+	primerOffsetValid: true,
+
+	minBaseQuality: 0,
+	minBaseQualityValid: true,
+
+	minDepth: 0,
+	minDepthValid: true,
+
+	minFreq: 0,
+	minFreqValid: true,
+
+	ambigSymbol: 'N',
+	ambigSymbolValid: true,
+
+	genPosCounts: false,
+	genInsCounts: false
+}
 
 export const ARE_FASTQ = (files) => {
 	if (files === undefined || files.length === 0) {

@@ -34,7 +34,8 @@
 		border-radius: 5px;
 		padding: 2vh 2vw;
 
-		#additional-arguments {
+		#fastp-arguments, #additional-arguments {
+			user-select: none;
 			cursor: pointer;
 		}
 	}
@@ -66,6 +67,7 @@
 	justify-content: space-between;
 	align-items: center;
 	width: 100%;
+	user-select: none;
 
 	i {
 		cursor: pointer;
@@ -94,6 +96,10 @@ footer {
 
 .full-width-container {
 	width: 100% !important;
+}
+
+.disabled {
+	opacity: 0.5;
 }
 
 .cursor-pointer {

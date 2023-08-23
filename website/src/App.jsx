@@ -23,6 +23,7 @@ import {
 	INSERTION_COUNTS_FILE_NAME,
 	POSITION_COUNTS_FILE_NAME,
 	CONSENSUS_FILE_NAME,
+	DEFAULT_INPUT_STATE
 } from './constants'
 
 import './App.scss'
@@ -39,60 +40,19 @@ export class App extends Component {
 			expandedContainer: undefined,
 			additionalArgsOpen: false,
 
-			// ------- User input -------
-			refFile: undefined,
-			exampleRefFile: undefined,
-			refFileValid: true,
-
-			alignmentFiles: undefined,
-			alignmentFilesAreFASTQ: false,
-			alignmentFilesValid: true,
 			exampleAlignmentFile: undefined,
+			exampleRefFile: undefined,
 
-			// ------- Fastp input -------
-			trimInput: false,
-
-			fastpCompressionLevel: 9,
-			fastpCompressionLevelValid: true,
 			fastpCompressionLevelDefault: 9,
-
-			trimFront1: 0,
-			trimFront1Valid: true,
 			trimFront1Default: 0,
-
-			trimTail1: 0,
-			trimTail1Valid: true,
 			trimTail1Default: 0,
-
-			trimPolyG: false,
-			trimPolyX: false,
-
-			// ------- ViralConsensus additional arguments -------
-			primerFile: undefined,
-			primerFileValid: true,
-
-			primerOffset: 0,
-			primerOffsetValid: true,
 			primerOffsetDefault: 0,
-
-			minBaseQuality: 0,
-			minBaseQualityValid: true,
 			minBaseQualityDefault: 0,
-
-			minDepth: 0,
-			minDepthValid: true,
 			minDepthDefault: 0,
-
-			minFreq: 0,
-			minFreqValid: true,
 			minFreqDefault: 0,
-
-			ambigSymbol: 'N',
-			ambigSymbolValid: true,
 			ambigSymbolDefault: 'N',
 
-			genPosCounts: false,
-			genInsCounts: false,
+			...DEFAULT_INPUT_STATE,
 
 			// ------- Biowasm & output states -------
 			CLI: undefined,
@@ -300,6 +260,14 @@ export class App extends Component {
 		})
 	}
 
+	toggleFastpArguments = (open = undefined) => {
+		if (this.state.trimInput) {
+			this.setState(prevState => {
+				return { fastpOpen: open === undefined ? !prevState.fastpOpen : open }
+			})
+		}
+	}
+
 	toggleLoadExampleData = () => {
 		this.setState(prevState => {
 			const refFile = (prevState.refFile === 'EXAMPLE_DATA' || prevState.alignmentFiles === 'EXAMPLE_DATA') ? document.getElementById('reference-file')?.files[0] : 'EXAMPLE_DATA';
@@ -320,6 +288,27 @@ export class App extends Component {
 		this.setState(prevState => {
 			return { expandedContainer: prevState.expandedContainer === container ? undefined : container }
 		});
+	}
+
+	promptResetInput = () => {
+		if (window.confirm("Are you sure you want to reset? All input data will be lost.")) {
+			this.resetInput();
+		}
+	}
+
+	resetInput = () => {
+		this.setState(Object.assign({}, DEFAULT_INPUT_STATE), () => {
+			const defaults = {};
+			for (const stateKey of Object.keys(this.state)) {
+				if (stateKey.endsWith('Default')) {
+					defaults[stateKey.slice(0, -7)] = this.state[stateKey];
+				}
+			}
+			this.setState(defaults);
+		});
+		document.getElementById('reference-file').value = null;
+		document.getElementById('alignment-files').value = null;
+		document.getElementById('primer-file').value = null;
 	}
 
 	validInput = () => {
@@ -639,39 +628,33 @@ export class App extends Component {
 								<input className="form-check-input" type="checkbox" name="trim-input-fastq" id="trim-input-fastq" checked={this.state.trimInput} onChange={this.setTrimInput} disabled={!(typeof this.state.alignmentFiles === 'object' && (this.state.alignmentFiles.length > 1 || this.state.alignmentFilesAreFASTQ))} />
 							</div>
 
-							<div className={`accordion accordion-flush mb-3 ${this.state.trimInput ? '' : 'd-none'}`} id="trim-args">
-								<div className="accordion-item">
-									<h2 className="accordion-header">
-										<button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#trim-args-collapse" aria-expanded="false" aria-controls="trim-args-collapse">
-											Fastp Trim Arguments
-										</button>
-									</h2>
-									<div id="trim-args-collapse" className="accordion-collapse collapse pt-4" data-bs-parent="#trim-args">
-										<label htmlFor="fastp-compression-level" className="form-label">Compression Level (1-9)</label>
-										<input id="fastp-compression-level" className={`form-control ${!this.state.fastpCompressionLevelValid && 'is-invalid'}`} type="number" placeholder="Compression Level" value={this.state.fastpCompressionLevel} onChange={this.setFastpCompressionLevel} />
-										<div className="form-text mb-4">Compression level for gzip output (1-9). 1 is fastest, 9 is smallest (default: {this.state.fastpCompressionLevelDefault})</div>
+							<h6 className={`mt-5 ${this.state.trimInput ? '' : 'disabled'}`} id="fastp-arguments" onClick={() => this.toggleFastpArguments()}>Fastp Trim Arguments <i className={`bi bi-chevron-${this.state.fastpOpen ? 'up' : 'down'}`}></i></h6>
+							<hr></hr>
 
-										<label htmlFor="trim-front-1" className="form-label"># of Bases to Trim (Front)</label>
-										<input id="trim-front-1" className={`form-control ${!this.state.trimFront1Valid && 'is-invalid'}`} type="number" placeholder="# of Bases to Trim (Front)" value={this.state.trimFront1} onChange={this.setTrimFront1} />
-										<div className="form-text mb-4">Number of bases to trim in the front of every read (default: {this.state.trimFront1Default})</div>
+							<div className={`${this.state.fastpOpen ? '' : 'd-none'}`}>
+								<label htmlFor="fastp-compression-level" className="form-label">Compression Level (1-9)</label>
+								<input id="fastp-compression-level" className={`form-control ${!this.state.fastpCompressionLevelValid && 'is-invalid'}`} type="number" placeholder="Compression Level" value={this.state.fastpCompressionLevel} onChange={this.setFastpCompressionLevel} />
+								<div className="form-text mb-4">Compression level for gzip output (1-9). 1 is fastest, 9 is smallest (default: {this.state.fastpCompressionLevelDefault})</div>
 
-										<label htmlFor="trim-tail-1" className="form-label"># of Bases to Trim (Tail)</label>
-										<input id="trim-tail-1" className={`form-control ${!this.state.trimTail1Valid && 'is-invalid'}`} type="number" placeholder="# of Bases to Trim (Tail)" value={this.state.trimTail1} onChange={this.setTrimTail1} />
-										<div className="form-text mb-4">Number of bases to trim in the tail of every read (default: {this.state.trimTail1Default})</div>
+								<label htmlFor="trim-front-1" className="form-label"># of Bases to Trim (Front)</label>
+								<input id="trim-front-1" className={`form-control ${!this.state.trimFront1Valid && 'is-invalid'}`} type="number" placeholder="# of Bases to Trim (Front)" value={this.state.trimFront1} onChange={this.setTrimFront1} />
+								<div className="form-text mb-4">Number of bases to trim in the front of every read (default: {this.state.trimFront1Default})</div>
 
-										<div className="form-check mb-4">
-											<label className="form-check-label" htmlFor="trim-poly-g">
-												Force PolyG Tail Trimming <span style={{ fontSize: '0.75rem' }}>(automatically enabled for Illumina NextSeq/NovaSeq data)</span>
-											</label>
-											<input className="form-check-input" type="checkbox" name="trim-poly-g" id="trim-poly-g" checked={this.state.trimPolyG} onChange={this.setTrimPolyG} />
-										</div>
-										<div className="form-check mb-4">
-											<label className="form-check-label" htmlFor="trim-poly-x">
-												Enable PolyX Trimming in 3' Ends.
-											</label>
-											<input className="form-check-input" type="checkbox" name="trim-poly-x" id="trim-poly-x" checked={this.state.trimPolyX} onChange={this.setTrimPolyX} />
-										</div>
-									</div>
+								<label htmlFor="trim-tail-1" className="form-label"># of Bases to Trim (Tail)</label>
+								<input id="trim-tail-1" className={`form-control ${!this.state.trimTail1Valid && 'is-invalid'}`} type="number" placeholder="# of Bases to Trim (Tail)" value={this.state.trimTail1} onChange={this.setTrimTail1} />
+								<div className="form-text mb-4">Number of bases to trim in the tail of every read (default: {this.state.trimTail1Default})</div>
+
+								<div className="form-check mb-4">
+									<label className="form-check-label" htmlFor="trim-poly-g">
+										Force PolyG Tail Trimming <span style={{ fontSize: '0.75rem' }}>(automatically enabled for Illumina NextSeq/NovaSeq data)</span>
+									</label>
+									<input className="form-check-input" type="checkbox" name="trim-poly-g" id="trim-poly-g" checked={this.state.trimPolyG} onChange={this.setTrimPolyG} />
+								</div>
+								<div className="form-check mb-4">
+									<label className="form-check-label" htmlFor="trim-poly-x">
+										Enable PolyX Trimming in 3' Ends.
+									</label>
+									<input className="form-check-input" type="checkbox" name="trim-poly-x" id="trim-poly-x" checked={this.state.trimPolyX} onChange={this.setTrimPolyX} />
 								</div>
 							</div>
 
@@ -720,11 +703,12 @@ export class App extends Component {
 							</div>
 						</div>
 
+						<button type="button" className="mt-3 btn btn-danger w-100" onClick={this.promptResetInput}>Reset Input</button>
 						<button type="button" className={`w-100 btn btn-${(this.state.alignmentFiles === 'EXAMPLE_DATA' || this.state.refFile === 'EXAMPLE_DATA') ? 'success' : 'warning'} mt-3`} onClick={this.toggleLoadExampleData}>
-							Load Example Data Files {(this.state.alignmentFiles === 'EXAMPLE_DATA' || this.state.refFile === 'EXAMPLE_DATA') && <strong>(Currently Using Example Files!)</strong>}
+							Load Example Data {(this.state.alignmentFiles === 'EXAMPLE_DATA' || this.state.refFile === 'EXAMPLE_DATA') && <strong>(Currently Using Example Files!)</strong>}
 						</button>
 
-						<button type="button" className="btn btn-primary w-100 mt-3" onClick={this.runViralConsensus}>Submit</button>
+						<button type="button" className="btn btn-primary w-100 mt-3" onClick={this.runViralConsensus}>Run ViralWasm-Consensus</button>
 					</div>
 
 					<div id="output" className={`form-group ms-4 me-5 ${this.state.expandedContainer === 'output' && 'full-width-container'} ${this.state.expandedContainer === 'input' && 'd-none'}`}>
