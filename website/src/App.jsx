@@ -2,6 +2,9 @@ import React, { Component } from 'react'
 import Pako from 'pako';
 
 import {
+	VIRAL_CONSENSUS_VERSION,
+	MINIMAP2_VERSION,
+	FASTP_VERSION,
 	CLEAR_LOG,
 	LOG,
 	EXAMPLE_ALIGNMENT_FILE,
@@ -35,8 +38,6 @@ export class App extends Component {
 		super(props)
 
 		this.state = {
-			version: '',
-
 			expandedContainer: undefined,
 			additionalArgsOpen: false,
 
@@ -69,7 +70,7 @@ export class App extends Component {
 
 	async componentDidMount() {
 		this.setState({
-			CLI: await new Aioli(["ViralConsensus/viral_consensus/0.0.3", "minimap2/2.22", "fastp/0.20.1"], {
+			CLI: await new Aioli(["ViralConsensus/viral_consensus/" + VIRAL_CONSENSUS_VERSION, "minimap2/" + MINIMAP2_VERSION, "fastp/" + FASTP_VERSION], {
 				printInterleaved: false,
 			})
 		}, () => {
@@ -79,7 +80,7 @@ export class App extends Component {
 
 		this.preventNumberInputScrolling();
 		this.fetchExampleFiles();
-		this.loadDefaultsAndVersion();
+		this.loadDefaults();
 	}
 
 	preventNumberInputScrolling = () => {
@@ -99,8 +100,8 @@ export class App extends Component {
 		this.setState({ exampleRefFile, exampleAlignmentFile: exampleAlignmentFile })
 	}
 
-	// Fetch and load ViralConsensus default values and version 
-	loadDefaultsAndVersion = async () => {
+	// Fetch and load ViralConsensus default values
+	loadDefaults = async () => {
 		const defaultTextFile = await (await fetch(DEFAULT_VALS_FILE)).text();
 		const defaultText = [...defaultTextFile.matchAll(/#define DEFAULT.*$/gm)].map((line) => line[0].split(' '));
 		for (const defaultValue of defaultText) {
@@ -113,9 +114,6 @@ export class App extends Component {
 				this.setState({ [DEFAULT_VALS_MAPPING[defaultValue[1]] + "Default"]: defaultValue[2], [DEFAULT_VALS_MAPPING[defaultValue[1]]]: defaultValue[2] })
 			}
 		}
-
-		const version = 'v' + defaultTextFile.matchAll(/#define VERSION.*$/gm).next().value[0].split(' ')[2].replace(/"|'/g, '');
-		this.setState({ version })
 	}
 
 	uploadRefFile = (e) => {
@@ -574,8 +572,8 @@ export class App extends Component {
 	render() {
 		return (
 			<div className="App pb-5">
-				<h2 className="mt-5 mb-2 w-100 text-center">ViralWasm-Consensus {this.state.version}</h2>
-				<p className="my-3 w-100 text-center">A serverless WebAssembly-based pipeline for consensus genome generation. Uses minimap2, fastp, and ViralConsensus via <a href="https://biowasm.com/" target="_blank" rel="noreferrer">Biowasm</a>. <br /><br /></p>
+				<h2 className="mt-5 mb-2 w-100 text-center">ViralWasm-Consensus</h2>
+				<p className="my-3 w-100 text-center">A serverless WebAssembly-based pipeline for consensus genome generation.<br /> Uses minimap2 v{MINIMAP2_VERSION}, fastp v{FASTP_VERSION}, and ViralConsensus v{VIRAL_CONSENSUS_VERSION} via <a href="https://biowasm.com/" target="_blank" rel="noreferrer">Biowasm</a>. <br /><br /></p>
 				<div className="mt-3" id="container">
 					<div id="input" className={`ms-5 me-4 ${this.state.expandedContainer === 'input' && 'full-width-container'} ${this.state.expandedContainer === 'output' && 'd-none'}`}>
 						<div id="input-header" className="mb-3">
