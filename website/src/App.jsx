@@ -58,6 +58,7 @@ export class App extends Component {
 			// ------- Biowasm & output states -------
 			CLI: undefined,
 			done: false,
+			timeElapsed: undefined,
 			consensusExists: false,
 			posCountsExists: false,
 			insCountsExists: false,
@@ -350,7 +351,7 @@ export class App extends Component {
 
 		const startTime = performance.now();
 		LOG("Starting job...")
-		this.setState({ done: false, loading: true, inputChanged: false, consensusExists: false, posCountsExists: false, insCountsExists: false, fastpOutputExists: false, minimapOutputExists: false })
+		this.setState({ done: false, timeElapsed: undefined, loading: true, inputChanged: false, consensusExists: false, posCountsExists: false, insCountsExists: false, fastpOutputExists: false, minimapOutputExists: false })
 
 		const CLI = this.state.CLI;
 
@@ -474,7 +475,7 @@ export class App extends Component {
 		const insCountsExists = !!(await CLI.ls(INSERTION_COUNTS_FILE_NAME));
 		const fastpOutputExists = !!(await CLI.ls(FASTP_OUTPUT_FILE_NAME));
 		const minimapOutputExists = !!(await CLI.ls(MINIMAP_OUTPUT_FILE_NAME));
-		this.setState({ done: true, consensusExists, posCountsExists, insCountsExists, fastpOutputExists, minimapOutputExists, loading: false })
+		this.setState({ done: true, timeElapsed: ((performance.now() - startTime) / 1000).toFixed(3), consensusExists, posCountsExists, insCountsExists, fastpOutputExists, minimapOutputExists, loading: false })
 		LOG(`Done! Time Elapsed: ${((performance.now() - startTime) / 1000).toFixed(3)} seconds`);
 	}
 
@@ -721,15 +722,27 @@ export class App extends Component {
 						{(this.state.done && (this.state.consensusExists || this.state.posCountsExists || this.state.insCountsExists) &&
 							<p className="mt-4 mb-2">ViralConsensus Output Files: </p>)}
 						<div className="download-buttons">
-							{(this.state.done && this.state.consensusExists) && <button type="button" className={`btn btn-success me-2 w-100`} onClick={() => this.downloadFile(CONSENSUS_FILE_NAME)}>Download Consensus FASTA</button>}
-							{(this.state.done && this.state.posCountsExists) && <button type="button" className={`btn btn-success mx-2 w-100`} onClick={() => this.downloadFile(POSITION_COUNTS_FILE_NAME)}>Download Position Counts</button>}
-							{(this.state.done && this.state.insCountsExists) && <button type="button" className={`btn btn-success ms-2 w-100`} onClick={() => this.downloadFile(INSERTION_COUNTS_FILE_NAME)}>Download Insertion Counts</button>}
+							{(this.state.done && this.state.consensusExists) && <button type="button" className={`btn btn-primary me-2 w-100`} onClick={() => this.downloadFile(CONSENSUS_FILE_NAME)}>Download Consensus FASTA</button>}
+							{(this.state.done && this.state.posCountsExists) && <button type="button" className={`btn btn-primary mx-2 w-100`} onClick={() => this.downloadFile(POSITION_COUNTS_FILE_NAME)}>Download Position Counts</button>}
+							{(this.state.done && this.state.insCountsExists) && <button type="button" className={`btn btn-primary ms-2 w-100`} onClick={() => this.downloadFile(INSERTION_COUNTS_FILE_NAME)}>Download Insertion Counts</button>}
 						</div>
 						{(this.state.done && (this.state.fastpOutputExists || this.state.minimapOutputExists) &&
 							<p className="mt-3 mb-2">Other Output Files:</p>)}
 						<div className="download-buttons">
-							{(this.state.done && this.state.fastpOutputExists) && <button type="button" className={`btn btn-success me-2 w-100`} onClick={() => this.downloadFile(FASTP_OUTPUT_FILE_NAME)}>Download Trimmed Sequences (FASTP)</button>}
-							{(this.state.done && this.state.minimapOutputExists) && <button type="button" className={`btn btn-success ms-2 w-100`} onClick={() => this.downloadFile(MINIMAP_OUTPUT_FILE_NAME)}>Download Aligned Sequences (Minimap2)</button>}
+							{(this.state.done && this.state.fastpOutputExists) && <button type="button" className={`btn btn-primary me-2 w-100`} onClick={() => this.downloadFile(FASTP_OUTPUT_FILE_NAME)}>Download Trimmed Sequences (FASTP)</button>}
+							{(this.state.done && this.state.minimapOutputExists) && <button type="button" className={`btn btn-primary ms-2 w-100`} onClick={() => this.downloadFile(MINIMAP_OUTPUT_FILE_NAME)}>Download Aligned Sequences (Minimap2)</button>}
+						</div>
+						<div id="duration" className="my-3">
+							{this.state.timeElapsed &&
+								<p id="duration-text">Total runtime: {this.state.timeElapsed} seconds</p>
+							}
+							{this.state.running && !this.state.done &&
+								<Fragment>
+									Running ... &nbsp;
+									<img id="running-loading-circle" className="loading-circle ms-2" src={loadingCircle}
+										alt="loading" />
+								</Fragment>
+							}
 						</div>
 						{this.state.done && this.state.inputChanged && <p className="text-danger text-center mt-4">Warning: Form input has changed since last run, run again to download latest output files.</p>}
 					</div>

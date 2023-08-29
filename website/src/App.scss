@@ -27,14 +27,14 @@
 	display: flex;
 	flex-direction: column;
 	min-width: 40%;
-	max-height: 80vh;
 
 	#input-content {
 		border: 2px solid black;
 		border-radius: 5px;
 		padding: 2vh 2vw;
 
-		#fastp-arguments, #additional-arguments {
+		#fastp-arguments,
+		#additional-arguments {
 			user-select: none;
 			cursor: pointer;
 		}
@@ -58,6 +58,13 @@
 		min-height: 30vh;
 		font-size: 0.9rem;
 		border: 2px solid black;
+	}
+
+	#duration {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		font-weight: bold;
 	}
 }
 
