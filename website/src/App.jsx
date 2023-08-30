@@ -1,6 +1,9 @@
 import React, { Component } from 'react'
 import Pako from 'pako';
 
+import 'bootstrap/dist/css/bootstrap.min.css';
+import "bootstrap-icons/font/bootstrap-icons.css";
+
 import {
 	VIRAL_CONSENSUS_VERSION,
 	MINIMAP2_VERSION,
@@ -19,6 +22,7 @@ import {
 	DEFAULT_REF_FILE_NAME,
 	DEFAULT_PRIMER_FILE_NAME,
 	DEFAULT_VALS_FILE,
+	DEFAULT_VALS_FALLBACK_FILE,
 	DEFAULT_VALS_MAPPING,
 	ARE_FASTQ,
 	IS_GZIP,
@@ -95,15 +99,20 @@ export class App extends Component {
 
 	// Fetch example file data (only once on mount)
 	fetchExampleFiles = async () => {
-		const exampleRefFile = await (await fetch(EXAMPLE_REF_FILE)).text();
-		const exampleAlignmentFile = await (await fetch(EXAMPLE_ALIGNMENT_FILE)).arrayBuffer();
+		const exampleRefFile = await (await fetch(`${import.meta.env.BASE_URL || ''}${EXAMPLE_REF_FILE}`)).text();
+		const exampleAlignmentFile = await (await fetch(`${import.meta.env.BASE_URL || ''}${EXAMPLE_ALIGNMENT_FILE}`)).arrayBuffer();
 
 		this.setState({ exampleRefFile, exampleAlignmentFile: exampleAlignmentFile })
 	}
 
 	// Fetch and load ViralConsensus default values
 	loadDefaults = async () => {
-		const defaultTextFile = await (await fetch(DEFAULT_VALS_FILE)).text();
+		let defaultTextFile;
+		try {
+			defaultTextFile = await (await fetch(DEFAULT_VALS_FILE)).text();
+		} catch (e) {
+			defaultTextFile = await (await fetch(`${import.meta.env.BASE_URL || ''}${DEFAULT_VALS_FALLBACK_FILE}`)).text();
+		}
 		const defaultText = [...defaultTextFile.matchAll(/#define DEFAULT.*$/gm)].map((line) => line[0].split(' '));
 		for (const defaultValue of defaultText) {
 			if (DEFAULT_VALS_MAPPING[defaultValue[1]]) {

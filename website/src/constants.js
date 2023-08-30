@@ -3,9 +3,9 @@ export const MINIMAP2_VERSION = "2.22";
 export const FASTP_VERSION = "0.20.1";
 export const BIOWASM_WORKING_DIR = "/shared/data/";
 export const OUTPUT_ID = "output-text";
-export const EXAMPLE_REF_FILE = "https://raw.githubusercontent.com/niemasd/ViralConsensus/master/example/NC_045512.2.fas";
+export const EXAMPLE_REF_FILE = "data/NC_045512.2.fas";
 export const DEFAULT_REF_FILE_NAME = BIOWASM_WORKING_DIR + 'ref.fas';
-export const EXAMPLE_ALIGNMENT_FILE = "https://raw.githubusercontent.com/niemasd/ViralConsensus/master/example/example.trimmed.unsorted.bam";
+export const EXAMPLE_ALIGNMENT_FILE = "data/example.bam";
 export const DEFAULT_ALIGNMENT_SAM_FILE_NAME = BIOWASM_WORKING_DIR + 'alignments.sam';
 export const DEFAULT_ALIGNMENT_BAM_FILE_NAME = BIOWASM_WORKING_DIR + 'alignments.bam';
 export const DEFAULT_PRIMER_FILE_NAME = BIOWASM_WORKING_DIR + 'primers.txt';
@@ -15,6 +15,7 @@ export const COMBINED_SEQUENCES_FILE_NAME = BIOWASM_WORKING_DIR + 'sequences.fas
 export const FASTP_OUTPUT_FILE_NAME = BIOWASM_WORKING_DIR + 'trimmed-sequences.fastq.gz';
 export const MINIMAP_OUTPUT_FILE_NAME = BIOWASM_WORKING_DIR + 'reads.sam';
 export const DEFAULT_VALS_FILE = "https://raw.githubusercontent.com/niemasd/ViralConsensus/main/common.h";
+export const DEFAULT_VALS_FALLBACK_FILE = "data/common.h";
 export const DEFAULT_VALS_MAPPING = {
 	"DEFAULT_MIN_QUAL": "minBaseQuality",
 	"DEFAULT_MIN_DEPTH": "minDepth",
