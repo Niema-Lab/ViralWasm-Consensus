@@ -75,7 +75,20 @@ export class App extends Component {
 
 	async componentDidMount() {
 		this.setState({
-			CLI: await new Aioli(["ViralConsensus/viral_consensus/" + VIRAL_CONSENSUS_VERSION, "minimap2/" + MINIMAP2_VERSION, "fastp/" + FASTP_VERSION], {
+			CLI: await new Aioli([{
+				tool: "ViralConsensus",
+				program: "viral_consensus",
+				version: VIRAL_CONSENSUS_VERSION,
+				urlPrefix: `${window.location.origin}${import.meta.env.BASE_URL || ''}tools/viral_consensus`,
+			}, {
+				tool: "minimap2",
+				version: MINIMAP2_VERSION,
+				urlPrefix: `${window.location.origin}${import.meta.env.BASE_URL || ''}tools/minimap2`,
+			}, {
+				tool: "fastp",
+				version: FASTP_VERSION,
+				urlPrefix: `${window.location.origin}${import.meta.env.BASE_URL || ''}tools/fastp`,
+			}], {
 				printInterleaved: false,
 			})
 		}, () => {
