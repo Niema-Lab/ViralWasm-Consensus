@@ -58,5 +58,13 @@ jobs:
           git config --global user.name 'GitHub Actions'
           git config --global user.email 'action@github.com'
           git add .
-          git commit -m "Add dist folder"
-          git push origin master
+
+          # Check for changes
+          if git diff-index --quiet HEAD --; then
+            # No changes
+            echo "No changes to commit"
+          else
+            # Changes detected
+            git commit -m "Add dist folder"
+            git push origin master
+          fi
