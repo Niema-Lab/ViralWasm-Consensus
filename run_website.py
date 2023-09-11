@@ -1,7 +1,6 @@
 import http.server
 import socketserver
 import subprocess
-import argparse
 import socket
 
 PORT = 5000
@@ -27,24 +26,18 @@ def kill_port_windows(port):
     except subprocess.CalledProcessError as e:
         return
 
-# Argument parser setup
-parser = argparse.ArgumentParser(description="HTTP Server")
-parser.add_argument("--force", help="Force kill existing processes on port", action="store_true")
-args = parser.parse_args()
+# Check if port is already in use
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+port_in_use = sock.connect_ex(('127.0.0.1', PORT)) == 0
+sock.close()
 
-# Only kill port if --force is provided
-if args.force:
-    kill_port_unix(PORT)
-    kill_port_windows(PORT)
-else: 
-	# Check if port is already in use
-	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	port_in_use = sock.connect_ex(('127.0.0.1', PORT)) == 0
-	sock.close()
-
-	# If port is in use, suggest using --force option
-	if port_in_use:
-		print(f"Port {PORT} is already in use. You can use the --force option to kill existing processes on this port.")
+# If port is in use, suggest using --force option
+if port_in_use:
+	force_port = input(f"Port {PORT} is already in use. Try to close the port and continue [Y/n]? ")
+	if force_port.lower() == "y":
+		kill_port_unix(PORT)
+		kill_port_windows(PORT)
+	else: 
 		exit(1)
 
 class Handler(http.server.SimpleHTTPRequestHandler):
