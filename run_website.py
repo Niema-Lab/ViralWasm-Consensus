@@ -2,9 +2,11 @@ import http.server
 import socketserver
 import subprocess
 import socket
+import os
 
 PORT = 5000
-DIRECTORY = "dist"
+# get current directory and set it as the directory to serve
+DIRECTORY = os.path.dirname(os.path.realpath(__file__)) + "/dist"
 
 def kill_port_unix(port):
     command = f"lsof -i :{port} -t"

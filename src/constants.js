@@ -1,3 +1,4 @@
+// TODO: auto download the versions during the github action? 
 export const VIRAL_CONSENSUS_VERSION = "0.0.3";
 export const MINIMAP2_VERSION = "2.22";
 export const FASTP_VERSION = "0.20.1";

@@ -1,4 +1,4 @@
-// TODO: automatically create dist/
+// TODO: is manual release creation okay?  
 // TODO: PWA? 
 import React, { Component } from 'react'
 import Pako from 'pako';
@@ -575,7 +575,7 @@ export class App extends Component {
 		return (
 			<div className="App pb-5">
 				<h2 className="mt-5 mb-2 w-100 text-center">ViralWasm-Consensus</h2>
-				<p className="my-3 w-100 text-center">A serverless WebAssembly-based pipeline for consensus genome generation.<br /> Uses minimap2 v{MINIMAP2_VERSION}, fastp v{FASTP_VERSION}, and ViralConsensus v{VIRAL_CONSENSUS_VERSION} via <a href="https://biowasm.com/" target="_blank" rel="noreferrer">Biowasm</a>. <br /><br /></p>
+				<p className="my-3 w-100 text-center">A serverless WebAssembly-based pipeline for consensus genome generation.<br /> Uses minimap2 v{MINIMAP2_VERSION}, fastp v{FASTP_VERSION}, and ViralConsensus v{VIRAL_CONSENSUS_VERSION} via <a href="https://biowasm.com/" target="_blank" rel="noreferrer">Biowasm</a>. <br />Source code & offline version: <a href="https://github.com/niema-lab/ViralWasm-Consensus/" target="_blank" rel="noreferrer">github.com/niema-lab/ViralWasm-Consensus</a>.<br /></p>
 				<div className="mt-3" id="container">
 					<div id="input" className={`ms-5 me-4 ${this.state.expandedContainer === 'input' && 'full-width-container'} ${this.state.expandedContainer === 'output' && 'd-none'}`}>
 						<div id="input-header" className="mb-3">
