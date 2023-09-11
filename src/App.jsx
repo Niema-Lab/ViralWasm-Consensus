@@ -1,5 +1,4 @@
 // TODO: automatically create dist/
-// TODO: don't manually download aioli, tools
 // TODO: PWA? 
 import React, { Component } from 'react'
 import Pako from 'pako';

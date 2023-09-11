@@ -11,7 +11,7 @@ on:
 
 # Sets the GITHUB_TOKEN permissions to allow deployment to GitHub Pages
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -40,6 +40,13 @@ jobs:
         run: npm install
       - name: Build
         run: npm run build
+      - name: Push dist to master branch
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'github-action@github.com'
+          git add .
+          git commit -m "Add dist folder"
+          git push origin master
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact
