@@ -1,8 +1,13 @@
+// TODO: automatically create dist/
+// TODO: don't manually download aioli, tools
+// TODO: PWA? 
 import React, { Component } from 'react'
 import Pako from 'pako';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "bootstrap-icons/font/bootstrap-icons.css";
+
+import Aioli from "@biowasm/aioli/dist/aioli";
 
 import {
 	VIRAL_CONSENSUS_VERSION,
@@ -21,9 +26,6 @@ import {
 	EXAMPLE_REF_FILE,
 	DEFAULT_REF_FILE_NAME,
 	DEFAULT_PRIMER_FILE_NAME,
-	DEFAULT_VALS_FILE,
-	DEFAULT_VALS_FALLBACK_FILE,
-	DEFAULT_VALS_MAPPING,
 	ARE_FASTQ,
 	IS_GZIP,
 	INPUT_IS_NONNEG_INTEGER,
@@ -75,7 +77,20 @@ export class App extends Component {
 
 	async componentDidMount() {
 		this.setState({
-			CLI: await new Aioli(["ViralConsensus/viral_consensus/" + VIRAL_CONSENSUS_VERSION, "minimap2/" + MINIMAP2_VERSION, "fastp/" + FASTP_VERSION], {
+			CLI: await new Aioli([{
+				tool: "ViralConsensus",
+				program: "viral_consensus",
+				version: VIRAL_CONSENSUS_VERSION,
+				urlPrefix: `${window.location.origin}${import.meta.env.BASE_URL || ''}tools/viral_consensus`,
+			}, {
+				tool: "minimap2",
+				version: MINIMAP2_VERSION,
+				urlPrefix: `${window.location.origin}${import.meta.env.BASE_URL || ''}tools/minimap2`,
+			}, {
+				tool: "fastp",
+				version: FASTP_VERSION,
+				urlPrefix: `${window.location.origin}${import.meta.env.BASE_URL || ''}tools/fastp`,
+			}], {
 				printInterleaved: false,
 			})
 		}, () => {
@@ -85,7 +100,6 @@ export class App extends Component {
 
 		this.preventNumberInputScrolling();
 		this.fetchExampleFiles();
-		this.loadDefaults();
 	}
 
 	preventNumberInputScrolling = () => {
@@ -103,27 +117,6 @@ export class App extends Component {
 		const exampleAlignmentFile = await (await fetch(`${import.meta.env.BASE_URL || ''}${EXAMPLE_ALIGNMENT_FILE}`)).arrayBuffer();
 
 		this.setState({ exampleRefFile, exampleAlignmentFile: exampleAlignmentFile })
-	}
-
-	// Fetch and load ViralConsensus default values
-	loadDefaults = async () => {
-		let defaultTextFile;
-		try {
-			defaultTextFile = await (await fetch(DEFAULT_VALS_FILE)).text();
-		} catch (e) {
-			defaultTextFile = await (await fetch(`${import.meta.env.BASE_URL || ''}${DEFAULT_VALS_FALLBACK_FILE}`)).text();
-		}
-		const defaultText = [...defaultTextFile.matchAll(/#define DEFAULT.*$/gm)].map((line) => line[0].split(' '));
-		for (const defaultValue of defaultText) {
-			if (DEFAULT_VALS_MAPPING[defaultValue[1]]) {
-				if (isNaN(defaultValue[2])) {
-					defaultValue[2] = defaultValue[2].replace(/"|'/g, '');
-				} else {
-					defaultValue[2] = Number(defaultValue[2]);
-				}
-				this.setState({ [DEFAULT_VALS_MAPPING[defaultValue[1]] + "Default"]: defaultValue[2], [DEFAULT_VALS_MAPPING[defaultValue[1]]]: defaultValue[2] })
-			}
-		}
 	}
 
 	uploadRefFile = (e) => {

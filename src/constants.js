@@ -14,14 +14,17 @@ export const TEMP_FASTP_OUTPUT = BIOWASM_WORKING_DIR + 'temp-trimmed.fastq.gz';
 export const COMBINED_SEQUENCES_FILE_NAME = BIOWASM_WORKING_DIR + 'sequences.fastq.gz';
 export const FASTP_OUTPUT_FILE_NAME = BIOWASM_WORKING_DIR + 'trimmed-sequences.fastq.gz';
 export const MINIMAP_OUTPUT_FILE_NAME = BIOWASM_WORKING_DIR + 'reads.sam';
-export const DEFAULT_VALS_FILE = "https://raw.githubusercontent.com/niemasd/ViralConsensus/main/common.h";
-export const DEFAULT_VALS_FALLBACK_FILE = "data/common.h";
-export const DEFAULT_VALS_MAPPING = {
-	"DEFAULT_MIN_QUAL": "minBaseQuality",
-	"DEFAULT_MIN_DEPTH": "minDepth",
-	"DEFAULT_MIN_FREQ": "minFreq",
-	"DEFAULT_AMBIG": "ambigSymbol",
-	"DEFAULT_PRIMER_OFFSET": "primerOffset",
+export const DEFAULT_VALS = {
+	minBaseQuality: 20,
+	minBaseQualityDefault: 20,
+	minDepth: 10,
+	minDepthDefault: 10,
+	minFreq: 0.5,
+	minFreqDefault: 0.5,
+	ambigSymbol: "N",
+	ambigSymbolDefault: "N",
+	primerOffset: 0,
+	primerOffsetDefault: 0,
 }
 export const CONSENSUS_FILE_NAME = BIOWASM_WORKING_DIR + 'consensus.fa';
 export const POSITION_COUNTS_FILE_NAME = BIOWASM_WORKING_DIR + 'positionCounts.tsv';
@@ -72,7 +75,9 @@ export const DEFAULT_INPUT_STATE = {
 	ambigSymbolValid: true,
 
 	genPosCounts: false,
-	genInsCounts: false
+	genInsCounts: false,
+
+	...DEFAULT_VALS,
 }
 
 export const ARE_FASTQ = (files) => {
