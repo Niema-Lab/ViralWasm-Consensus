@@ -2,16 +2,19 @@
 // TODO: PWA? 
 import React, { Component } from 'react'
 import Pako from 'pako';
+import { marked } from 'marked';
+import Aioli from "@biowasm/aioli/dist/aioli";
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-import Aioli from "@biowasm/aioli/dist/aioli";
 
 import {
 	VIRAL_CONSENSUS_VERSION,
 	MINIMAP2_VERSION,
 	FASTP_VERSION,
+	OFFLINE_INSTRUCTIONS,
+	OFFLINE_INSTRUCTIONS_KEYWORDS,
 	REFS,
 	REF_NAMES,
 	REF_GENOMES_DIR,
@@ -49,7 +52,8 @@ export class App extends Component {
 		this.state = {
 			expandedContainer: undefined,
 			additionalArgsOpen: false,
-			showOfflineInstructions: true,
+			showOfflineInstructions: false,
+			offlineInstructions: undefined,
 
 			refGenomes: undefined,
 
@@ -108,6 +112,8 @@ export class App extends Component {
 		this.fetchExampleFiles();
 		this.fetchRefGenomes();
 		this.initRefGenomes();
+		this.fetchOfflineInstructions();
+		this.addOfflineInstructionsListener();
 	}
 
 	preventNumberInputScrolling = () => {
@@ -159,6 +165,22 @@ export class App extends Component {
 				this.setState({ preloadRefOptions })
 			}
 		}, 250)
+	}
+
+	fetchOfflineInstructions = async () => {
+		const res = await fetch(`${window.location.origin}${import.meta.env.BASE_URL || ''}${OFFLINE_INSTRUCTIONS}`);
+		const text = await res.text();
+		const html = marked(text);
+		const offlineInstructions = html.slice(html.indexOf(OFFLINE_INSTRUCTIONS_KEYWORDS) + OFFLINE_INSTRUCTIONS_KEYWORDS.length)
+		this.setState({ offlineInstructions });
+	}
+
+	addOfflineInstructionsListener = () => {
+		document.addEventListener('keydown', (e) => {
+			if (e.key === 'Escape') {
+				this.hideOfflineInstructions();
+			}
+		})
 	}
 
 	uploadRefFile = (e) => {
@@ -626,6 +648,10 @@ export class App extends Component {
 		this.setState({ showOfflineInstructions: true })
 	}
 
+	hideOfflineInstructions = () => {
+		this.setState({ showOfflineInstructions: false })
+	}
+
 	render() {
 		return (
 			<div className="App pb-5">
@@ -826,9 +852,10 @@ export class App extends Component {
 				{this.state.showOfflineInstructions &&
 					<div id="offline-instructions">
 						<div className="card">
-							<button type="button" class="btn-close" aria-label="Close"></button>
+							<button type="button" className="btn-close" aria-label="Close" onClick={this.hideOfflineInstructions}></button>
 							<div className="card-body">
-								<h5 className="card-title text-center mt-3">Running ViralWasm-Consensus Offline</h5>
+								<h5 className="card-title text-center mt-3 mb-4">Running ViralWasm-Consensus Offline</h5>
+								<div dangerouslySetInnerHTML={{ __html: this.state.offlineInstructions }} />
 							</div>
 						</div>
 					</div>

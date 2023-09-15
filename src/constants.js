@@ -72,6 +72,8 @@ export const REF_NAMES = {
     }
 }
 
+export const OFFLINE_INSTRUCTIONS = "/README.md";
+export const OFFLINE_INSTRUCTIONS_KEYWORDS = "<h3>ViralWasm-Consensus Offline</h3>\n";
 export const BIOWASM_WORKING_DIR = "/shared/data/";
 export const OUTPUT_ID = "output-text";
 export const EXAMPLE_REF_FILE = "data/NC_045512.2.fas";
