@@ -49,6 +49,7 @@ export class App extends Component {
 		this.state = {
 			expandedContainer: undefined,
 			additionalArgsOpen: false,
+			showOfflineInstructions: true,
 
 			refGenomes: undefined,
 
@@ -620,11 +621,19 @@ export class App extends Component {
 		await this.state.CLI.fs.unlink(file);
 	}
 
+	showOfflineInstructions = (e) => {
+		e.preventDefault();
+		this.setState({ showOfflineInstructions: true })
+	}
+
 	render() {
 		return (
 			<div className="App pb-5">
 				<h2 className="mt-5 mb-2 w-100 text-center">ViralWasm-Consensus</h2>
-				<p className="my-3 w-100 text-center">A serverless WebAssembly-based pipeline for consensus genome generation.<br /> Uses minimap2 v{MINIMAP2_VERSION}, fastp v{FASTP_VERSION}, and ViralConsensus v{VIRAL_CONSENSUS_VERSION} via <a href="https://biowasm.com/" target="_blank" rel="noreferrer">Biowasm</a>. <br />Source code & offline version: <a href="https://github.com/niema-lab/ViralWasm-Consensus/" target="_blank" rel="noreferrer">github.com/niema-lab/ViralWasm-Consensus</a>.<br /></p>
+				<p className="my-3 w-100 text-center">A serverless WebAssembly-based pipeline for consensus genome generation.<br />
+					Uses minimap2 v{MINIMAP2_VERSION}, fastp v{FASTP_VERSION}, and ViralConsensus v{VIRAL_CONSENSUS_VERSION} via <a href="https://biowasm.com/" target="_blank" rel="noreferrer">Biowasm</a>. <br />
+					<a href="" onClick={this.showOfflineInstructions}>Want to run offline? Click here!</a>
+				</p>
 				<div className="mt-3" id="container">
 					<div id="input" className={`ms-5 me-4 ${this.state.expandedContainer === 'input' && 'full-width-container'} ${this.state.expandedContainer === 'output' && 'd-none'}`}>
 						<div id="input-header" className="mb-3">
@@ -812,6 +821,18 @@ export class App extends Component {
 						{this.state.done && this.state.inputChanged && <p className="text-danger text-center mt-4">Warning: Form input has changed since last run, run again to download latest output files.</p>}
 					</div>
 				</div>
+				<footer className="d-flex w-100 justify-content-center">Source code:&nbsp;<a href="https://github.com/niema-lab/ViralWasm-Consensus/" target="_blank" rel="noreferrer">github.com/niema-lab/ViralWasm-Consensus</a>.<br /></footer>
+
+				{this.state.showOfflineInstructions &&
+					<div id="offline-instructions">
+						<div className="card">
+							<button type="button" class="btn-close" aria-label="Close"></button>
+							<div className="card-body">
+								<h5 className="card-title text-center mt-3">Running ViralWasm-Consensus Offline</h5>
+							</div>
+						</div>
+					</div>
+				}
 			</div>
 		)
 	}
