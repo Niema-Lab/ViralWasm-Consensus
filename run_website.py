@@ -3,10 +3,16 @@ import socketserver
 import subprocess
 import socket
 import os
+import platform
+import math
+import random
+import webbrowser
+
+OS_TYPE = platform.system()
 
 PORT = 5000
 # get current directory and set it as the directory to serve
-DIRECTORY = os.path.dirname(os.path.realpath(__file__)) + "/dist"
+DIRECTORY = os.path.dirname(os.path.realpath(__file__)) + "/dist/"
 
 def kill_port_unix(port):
     command = f"lsof -i :{port} -t"
@@ -35,17 +41,31 @@ sock.close()
 
 # If port is in use, suggest using --force option
 if port_in_use:
-	force_port = input(f"Port {PORT} is already in use. Try to close the port and continue [Y/n]? ")
-	if force_port.lower() == "y":
-		kill_port_unix(PORT)
-		kill_port_windows(PORT)
-	else: 
-		exit(1)
+    force_port = input(f"Port {PORT} is already in use. Try to close the port and continue [Y/n]? ")
+    if force_port.lower() == "y":
+        if OS_TYPE == "Windows":
+            kill_port_windows(PORT)
+        else:
+            kill_port_unix(PORT)
+    else: 
+        exit(1)
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=DIRECTORY, **kwargs)
 
-with socketserver.TCPServer(("", PORT), Handler) as httpd:
-    print(f'Serving at port {PORT}. Visit http://localhost:{PORT}/index.html')
-    httpd.serve_forever()
+def start_server(port):
+    try:
+        with socketserver.ThreadingTCPServer(("", port), Handler) as httpd:
+            print(f'Serving at port {port}. Visit http://localhost:{port}. To stop, press Ctrl+C (multiple times if needed)')
+            webbrowser.open(f"http://localhost:{port}")
+            httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("Stopping server...")
+        httpd.shutdown()
+        httpd.server_close()
+
+try: 
+    start_server(PORT)
+except OSError as e:
+    start_server(6802 + math.floor(random.random() * 15))

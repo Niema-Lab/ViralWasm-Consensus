@@ -140,7 +140,7 @@ export class App extends Component {
 
 	initRefGenomes = () => {
 		const preloadRefInterval = setInterval(() => {
-			if (this.state.refGenomes.size > 0) {
+			if (this.state.refGenomes?.size > 0) {
 				clearInterval(preloadRefInterval);
 				const preloadRefOptions = [];
 				for (const REF_NAME_MAP of Object.entries(REF_NAMES)) {
