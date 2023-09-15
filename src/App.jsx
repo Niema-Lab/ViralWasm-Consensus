@@ -1,4 +1,3 @@
-// TODO: is manual release creation okay?  
 // TODO: PWA? 
 import React, { Component } from 'react'
 import Pako from 'pako';
@@ -29,7 +28,7 @@ import {
 	COMBINED_SEQUENCES_FILE_NAME,
 	FASTP_OUTPUT_FILE_NAME,
 	MINIMAP_OUTPUT_FILE_NAME,
-	EXAMPLE_REF_FILE,
+	EXAMPLE_REF,
 	DEFAULT_REF_FILE_NAME,
 	DEFAULT_PRIMER_FILE_NAME,
 	ARE_FASTQ,
@@ -38,7 +37,7 @@ import {
 	INSERTION_COUNTS_FILE_NAME,
 	POSITION_COUNTS_FILE_NAME,
 	CONSENSUS_FILE_NAME,
-	DEFAULT_INPUT_STATE
+	DEFAULT_INPUT_STATE,
 } from './constants'
 
 import './App.scss'
@@ -58,7 +57,6 @@ export class App extends Component {
 			refGenomes: undefined,
 
 			exampleAlignmentFile: undefined,
-			exampleRefFile: undefined,
 
 			fastpCompressionLevelDefault: 9,
 			trimFront1Default: 0,
@@ -127,10 +125,9 @@ export class App extends Component {
 
 	// Fetch example file data (only once on mount)
 	fetchExampleFiles = async () => {
-		const exampleRefFile = await (await fetch(`${import.meta.env.BASE_URL || ''}${EXAMPLE_REF_FILE}`)).text();
 		const exampleAlignmentFile = await (await fetch(`${import.meta.env.BASE_URL || ''}${EXAMPLE_ALIGNMENT_FILE}`)).arrayBuffer();
 
-		this.setState({ exampleRefFile, exampleAlignmentFile: exampleAlignmentFile })
+		this.setState({ exampleAlignmentFile: exampleAlignmentFile })
 	}
 
 	fetchRefGenomes = async () => {
@@ -339,10 +336,15 @@ export class App extends Component {
 
 	toggleLoadExampleData = () => {
 		this.setState(prevState => {
-			const refFile = (prevState.refFile === 'EXAMPLE_DATA' || prevState.alignmentFiles === 'EXAMPLE_DATA') ? document.getElementById('reference-file')?.files[0] : 'EXAMPLE_DATA';
-			const alignmentFiles = (prevState.refFile === 'EXAMPLE_DATA' || prevState.alignmentFiles === 'EXAMPLE_DATA') ? Array.from(document.getElementById('alignment-files')?.files) : 'EXAMPLE_DATA';
+			const preloadedRef = (prevState.alignmentFiles === 'EXAMPLE_DATA') ? this.state.preloadedRef : EXAMPLE_REF;
+			const refFile = (prevState.alignmentFiles === 'EXAMPLE_DATA') ? document.getElementById('reference-file')?.files[0] : undefined;
+			if (refFile === undefined) {
+				document.getElementById('reference-file').value = null;
+			}
+			const alignmentFiles = (prevState.alignmentFiles === 'EXAMPLE_DATA') ? Array.from(document.getElementById('alignment-files')?.files) : 'EXAMPLE_DATA';
 			const alignmentFilesAreFASTQ = (alignmentFiles === 'EXAMPLE_DATA') ? false : ARE_FASTQ(Array.from(document.getElementById('alignment-files').files));
 			return {
+				preloadedRef,
 				refFile,
 				alignmentFiles,
 				alignmentFilesAreFASTQ,
@@ -445,9 +447,7 @@ export class App extends Component {
 
 		LOG("Reading reference file...")
 		// Create example reference fasta file
-		if (this.state.refFile === 'EXAMPLE_DATA') {
-			await CLI.fs.writeFile(DEFAULT_REF_FILE_NAME, this.state.exampleRefFile);
-		} else if (this.state.refFile !== undefined) {
+		if (this.state.refFile !== undefined) {
 			await CLI.fs.writeFile(DEFAULT_REF_FILE_NAME, await this.fileReaderReadFile(this.state.refFile));
 		} else {
 			const refFileData = await (await fetch(`${import.meta.env.BASE_URL || ''}${REF_GENOMES_DIR}${this.state.preloadedRef}/${this.state.preloadedRef}.fas`)).text();
@@ -716,7 +716,7 @@ export class App extends Component {
 							<h5 className="mt-2 text-center">&#8213; OR &#8213;</h5>
 
 							<div className="d-flex flex-column mb-4">
-								<label htmlFor="reference-file" className="form-label">Reference File (FASTA){this.state.refFile === 'EXAMPLE_DATA' && <span><strong>: Using example <a href={EXAMPLE_REF_FILE} target="_blank" rel="noreferrer">reference file</a>.</strong></span>}<span className="text-danger"> *</span></label>
+								<label htmlFor="reference-file" className="form-label">Reference File (FASTA)<span className="text-danger"> *</span></label>
 								<input className={`form-control ${!this.state.refFileValid && 'is-invalid'}`} type="file" id="reference-file" onChange={this.uploadRefFile} />
 							</div>
 
@@ -803,8 +803,8 @@ export class App extends Component {
 						</div>
 
 						<button type="button" className="mt-3 btn btn-danger w-100" onClick={this.promptResetInput}>Reset Input</button>
-						<button type="button" className={`w-100 btn btn-${(this.state.alignmentFiles === 'EXAMPLE_DATA' || this.state.refFile === 'EXAMPLE_DATA') ? 'success' : 'warning'} mt-3`} onClick={this.toggleLoadExampleData}>
-							Load Example Data {(this.state.alignmentFiles === 'EXAMPLE_DATA' || this.state.refFile === 'EXAMPLE_DATA') && <strong>(Currently Using Example Files!)</strong>}
+						<button type="button" className={`w-100 btn btn-${(this.state.alignmentFiles === 'EXAMPLE_DATA') ? 'success' : 'warning'} mt-3`} onClick={this.toggleLoadExampleData}>
+							Load Example Data {(this.state.alignmentFiles === 'EXAMPLE_DATA') && <strong>(Currently Using Example Files!)</strong>}
 						</button>
 
 						<button type="button" className="btn btn-primary w-100 mt-3" onClick={this.runViralConsensus}>Run ViralWasm-Consensus</button>
