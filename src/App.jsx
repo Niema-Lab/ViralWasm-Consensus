@@ -12,6 +12,10 @@ import {
 	VIRAL_CONSENSUS_VERSION,
 	MINIMAP2_VERSION,
 	FASTP_VERSION,
+	REFS,
+	REF_NAMES,
+	REF_GENOMES_DIR,
+	REF_GENOME_REPO_STRUCTURE_LINK,
 	CLEAR_LOG,
 	LOG,
 	EXAMPLE_ALIGNMENT_FILE,
@@ -45,6 +49,8 @@ export class App extends Component {
 		this.state = {
 			expandedContainer: undefined,
 			additionalArgsOpen: false,
+
+			refGenomes: undefined,
 
 			exampleAlignmentFile: undefined,
 			exampleRefFile: undefined,
@@ -99,6 +105,8 @@ export class App extends Component {
 
 		this.preventNumberInputScrolling();
 		this.fetchExampleFiles();
+		this.fetchRefGenomes();
+		this.initRefGenomes();
 	}
 
 	preventNumberInputScrolling = () => {
@@ -118,8 +126,46 @@ export class App extends Component {
 		this.setState({ exampleRefFile, exampleAlignmentFile: exampleAlignmentFile })
 	}
 
+	fetchRefGenomes = async () => {
+		const res = await fetch(`${window.location.origin}${import.meta.env.BASE_URL || ''}${REF_GENOME_REPO_STRUCTURE_LINK}`);
+		const json = await res.json();
+		const refGenomes = new Set();
+		for (const file of json.tree) {
+			if (file.path.startsWith("ref_genomes/")) {
+				refGenomes.add(file.path.split("/")[1]);
+			}
+		}
+		this.setState({ refGenomes });
+	}
+
+	initRefGenomes = () => {
+		const preloadRefInterval = setInterval(() => {
+			if (this.state.refGenomes.size > 0) {
+				clearInterval(preloadRefInterval);
+				const preloadRefOptions = [];
+				for (const REF_NAME_MAP of Object.entries(REF_NAMES)) {
+					const REF_NAME_MAP_TYPE = Object.entries(REF_NAME_MAP[1])
+					for (const REF_NAME of REF_NAME_MAP_TYPE) {
+						const virus = REF_NAME[0];
+						const commonName = REF_NAME[1];
+						preloadRefOptions.push(
+							<option value={REFS[virus]} key={commonName}>{commonName}</option>
+						)
+					}
+				}
+
+				preloadRefOptions.sort((a, b) => a.key.localeCompare(b.key));
+				this.setState({ preloadRefOptions })
+			}
+		}, 250)
+	}
+
 	uploadRefFile = (e) => {
 		this.setState({ refFile: e.target.files[0], refFileValid: true, inputChanged: true })
+	}
+
+	setPreloadedRef = (event) => {
+		this.setState({ preloadedRef: event.target.value === 'undefined' ? undefined : event.target.value, inputChanged: true, refFileValid: true })
 	}
 
 	uploadAlignmentFiles = (e) => {
@@ -320,7 +366,7 @@ export class App extends Component {
 		CLEAR_LOG()
 		LOG("Validating input...")
 
-		if (!this.state.refFile) {
+		if (!this.state.refFile && !this.state.preloadedRef) {
 			refFileValid = false;
 		}
 
@@ -378,8 +424,11 @@ export class App extends Component {
 		// Create example reference fasta file
 		if (this.state.refFile === 'EXAMPLE_DATA') {
 			await CLI.fs.writeFile(DEFAULT_REF_FILE_NAME, this.state.exampleRefFile);
-		} else {
+		} else if (this.state.refFile !== undefined) {
 			await CLI.fs.writeFile(DEFAULT_REF_FILE_NAME, await this.fileReaderReadFile(this.state.refFile));
+		} else {
+			const refFileData = await (await fetch(`${import.meta.env.BASE_URL || ''}${REF_GENOMES_DIR}${this.state.preloadedRef}/${this.state.preloadedRef}.fas`)).text();
+			await CLI.fs.writeFile(DEFAULT_REF_FILE_NAME, refFileData);
 		}
 
 		// Handle input read files, run fastp (trimming) and minimap2 (alignment), as necessary
@@ -586,11 +635,6 @@ export class App extends Component {
 						</div>
 						<div id="input-content">
 							<div className="d-flex flex-column mb-4">
-								<label htmlFor="reference-file" className="form-label">Reference File (FASTA){this.state.refFile === 'EXAMPLE_DATA' && <span><strong>: Using example <a href={EXAMPLE_REF_FILE} target="_blank" rel="noreferrer">reference file</a>.</strong></span>}<span className="text-danger"> *</span></label>
-								<input className={`form-control ${!this.state.refFileValid && 'is-invalid'}`} type="file" id="reference-file" onChange={this.uploadRefFile} />
-							</div>
-
-							<div className="d-flex flex-column mb-4">
 								<label htmlFor="alignment-files" className="form-label">Upload Input Reads File(s) (BAM, SAM, FASTQ(s)){this.state.alignmentFiles === 'EXAMPLE_DATA' && <span><strong>: Using example <a href={EXAMPLE_ALIGNMENT_FILE} target="_blank" rel="noreferrer">BAM file</a>.</strong></span>}<span className="text-danger"> *</span></label>
 								<input className={`form-control ${!this.state.alignmentFilesValid && 'is-invalid'}`} type="file" multiple accept=".sam,.bam,.fastq,.fastq.gz,.fq,.fq.gz" id="alignment-files" onChange={this.uploadAlignmentFiles} />
 							</div>
@@ -620,6 +664,26 @@ export class App extends Component {
 									<button className="btn btn-danger mt-3" onClick={this.clearAlignmentFiles}>Clear Input Reads Files</button>
 								</div>
 							}
+
+							<label htmlFor="common-sequences" className="form-label mt-2">
+								Select Preloaded Reference Sequence
+								{this.state.refFile !== undefined &&
+									<span className='mt-2 text-warning'>
+										<strong>&nbsp;(Warning: Using Uploaded Reference File)</strong>
+									</span>
+								}
+							</label>
+							<select className="form-select" aria-label="Default select example" id="common-sequences" value={this.state.preloadedRef ?? ''} onChange={this.setPreloadedRef}>
+								<option value="">Select a Reference Sequence</option>
+								{this.state.preloadRefOptions}
+							</select>
+
+							<h5 className="mt-2 text-center">&#8213; OR &#8213;</h5>
+
+							<div className="d-flex flex-column mb-4">
+								<label htmlFor="reference-file" className="form-label">Reference File (FASTA){this.state.refFile === 'EXAMPLE_DATA' && <span><strong>: Using example <a href={EXAMPLE_REF_FILE} target="_blank" rel="noreferrer">reference file</a>.</strong></span>}<span className="text-danger"> *</span></label>
+								<input className={`form-control ${!this.state.refFileValid && 'is-invalid'}`} type="file" id="reference-file" onChange={this.uploadRefFile} />
+							</div>
 
 							<div className='form-check mb-4' style={{ opacity: (typeof this.state.alignmentFiles === 'object' && (this.state.alignmentFiles.length > 1 || this.state.alignmentFilesAreFASTQ)) ? 1 : 0.5 }}>
 								<label className="form-check-label" htmlFor="trim-input-fastq">
