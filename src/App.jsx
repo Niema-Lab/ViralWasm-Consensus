@@ -184,6 +184,14 @@ export class App extends Component {
 		this.setState({ refFile: e.target.files[0], refFileValid: true, inputChanged: true })
 	}
 
+	clearRefFile = () => {
+		if (this.state.refFile !== undefined) {
+			this.setState({ inputChanged: true })
+		}
+		this.setState({ refFile: undefined })
+		document.getElementById('reference-file').value = null;
+	}
+
 	setPreloadedRef = (event) => {
 		this.setState({ preloadedRef: event.target.value === 'undefined' ? undefined : event.target.value, inputChanged: true, refFileValid: true })
 	}
@@ -421,10 +429,6 @@ export class App extends Component {
 			return;
 		}
 
-		const startTime = performance.now();
-		LOG("Starting job...")
-		this.setState({ done: false, timeElapsed: undefined, loading: true, inputChanged: false, consensusExists: false, posCountsExists: false, insCountsExists: false, fastpOutputExists: false, minimapOutputExists: false })
-
 		const CLI = this.state.CLI;
 
 		if (CLI === undefined) {
@@ -433,6 +437,10 @@ export class App extends Component {
 			}, 2000)
 			return;
 		}
+
+		const startTime = performance.now();
+		LOG("Starting job...")
+		this.setState({ done: false, timeElapsed: undefined, loading: true, inputChanged: false, consensusExists: false, posCountsExists: false, insCountsExists: false, fastpOutputExists: false, minimapOutputExists: false })
 
 		const refFileName = DEFAULT_REF_FILE_NAME;
 		const alignmentFileName = (this.state.alignmentFiles[0]?.name?.endsWith('.bam') || this.state.alignmentFiles === 'EXAMPLE_DATA') ?
@@ -670,8 +678,13 @@ export class App extends Component {
 						</div>
 						<div id="input-content">
 							<div className="d-flex flex-column mb-4">
-								<label htmlFor="alignment-files" className="form-label">Upload Input Reads File(s) (BAM, SAM, FASTQ(s)){this.state.alignmentFiles === 'EXAMPLE_DATA' && <span><strong>: Using example <a href={EXAMPLE_ALIGNMENT_FILE} target="_blank" rel="noreferrer">BAM file</a>.</strong></span>}<span className="text-danger"> *</span></label>
+								<label htmlFor="alignment-files" className="form-label">Upload Input Reads File(s) (BAM, SAM, FASTQ(s))<span className="text-danger"> *</span></label>
 								<input className={`form-control ${!this.state.alignmentFilesValid && 'is-invalid'}`} type="file" multiple accept=".sam,.bam,.fastq,.fastq.gz,.fq,.fq.gz" id="alignment-files" onChange={this.uploadAlignmentFiles} />
+								{this.state.alignmentFiles === 'EXAMPLE_DATA' &&
+									<p className="mt-2 mb-0"><strong>Using Loaded Example file: <a
+										href={`${import.meta.env.BASE_URL || ''}${EXAMPLE_ALIGNMENT_FILE}`}
+										target="_blank" rel="noreferrer">example.bam</a></strong></p>
+								}
 							</div>
 
 							{/* NOTE: we assume here that if they upload more than one file, they are intending to upload multiple FASTQ files */}
@@ -700,24 +713,29 @@ export class App extends Component {
 								</div>
 							}
 
-							<label htmlFor="common-sequences" className="form-label mt-2">
-								Select Preloaded Reference Sequence
-								{this.state.refFile !== undefined &&
-									<span className='mt-2 text-warning'>
-										<strong>&nbsp;(Warning: Using Uploaded Reference File)</strong>
-									</span>
-								}
-							</label>
-							<select className="form-select" aria-label="Default select example" id="common-sequences" value={this.state.preloadedRef ?? ''} onChange={this.setPreloadedRef}>
-								<option value="">Select a Reference Sequence</option>
-								{this.state.preloadRefOptions}
-							</select>
+							<div className={`${this.state.refFile !== undefined ? 'disabled-input' : ''}`}>
+								<label htmlFor="common-sequences" className="form-label mt-2">
+									Select Preloaded Reference Sequence
+									{this.state.refFile !== undefined &&
+										<span className='mt-2 text-warning'>
+											<strong>&nbsp;(Using Uploaded Sequence)</strong>
+										</span>
+									}
+								</label>
+								<select className="form-select" aria-label="Default select example" id="common-sequences" value={this.state.preloadedRef ?? ''} onChange={this.setPreloadedRef}>
+									<option value="">Select a Reference Sequence</option>
+									{this.state.preloadRefOptions}
+								</select>
+							</div>
 
 							<h5 className="mt-2 text-center">&#8213; OR &#8213;</h5>
 
 							<div className="d-flex flex-column mb-4">
 								<label htmlFor="reference-file" className="form-label">Reference File (FASTA)<span className="text-danger"> *</span></label>
-								<input className={`form-control ${!this.state.refFileValid && 'is-invalid'}`} type="file" id="reference-file" onChange={this.uploadRefFile} />
+								<div className="input-group">
+									<input className={`form-control ${!this.state.refFileValid && 'is-invalid'}`} type="file" id="reference-file" onChange={this.uploadRefFile} />
+									<button className="btn btn-outline-danger" type="button" id="reference-file-addon" onClick={this.clearRefFile}><i className="bi bi-trash"></i></button>
+								</div>
 							</div>
 
 							<div className='form-check mb-4' style={{ opacity: (typeof this.state.alignmentFiles === 'object' && (this.state.alignmentFiles.length > 1 || this.state.alignmentFilesAreFASTQ)) ? 1 : 0.5 }}>

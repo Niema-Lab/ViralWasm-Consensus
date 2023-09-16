@@ -19,6 +19,12 @@ code {
 	font-size: 1em;
 }
 
+.disabled-input {
+	opacity: 0.6;
+	user-select: none;
+	pointer-events: none;
+}
+
 #container {
 	display: flex;
 	align-items: stretch;
@@ -113,7 +119,7 @@ code {
 
 	.card {
 		margin-top: 10vh;
-		width: 70vw;	
+		width: 70vw;
 		min-height: 40vh;
 		overflow-y: auto;
 		padding: 0 2rem;

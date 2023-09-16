@@ -161,12 +161,10 @@ export const ARE_FASTQ = (files) => {
 
 	for (const file of files) {
 		const name = file.name;
-		if (!(name !== undefined && (
-			name.endsWith('.fastq') ||
-			name.endsWith('.fq') ||
-			name.endsWith('.fastq.gz') ||
-			name.endsWith('.fq.gz')
-		))) {
+		const extensionIndex = name.indexOf('.') === -1 ? name.length : name.indexOf('.');
+		const extension = name.slice(extensionIndex);
+		
+		if (!(extension.includes('fastq') || extension.includes('fq'))) {
 			return false;
 		}
 	}
