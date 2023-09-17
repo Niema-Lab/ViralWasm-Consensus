@@ -586,7 +586,7 @@ export class App extends Component {
 		}
 
 		LOG("Executing command: " + fastpCommand);
-		await CLI.exec(fastpCommand);
+		LOG((await CLI.exec(fastpCommand)).stderr);
 		// TODO: Is there a better way to append data w/o an additional read + append? 
 		return await CLI.fs.readFile(TEMP_FASTP_OUTPUT);
 	}
@@ -648,7 +648,7 @@ export class App extends Component {
 		}
 
 		await this.state.CLI.fs.truncate(file, 0);
-		await this.state.CLI.fs.unlink(file);
+		// await this.state.CLI.fs.unlink(file);
 	}
 
 	showOfflineInstructions = (e) => {
@@ -722,7 +722,7 @@ export class App extends Component {
 										</span>
 									}
 								</label>
-								<select className="form-select" aria-label="Default select example" id="common-sequences" value={this.state.preloadedRef ?? ''} onChange={this.setPreloadedRef}>
+								<select className={`form-select  ${!this.state.refFileValid && 'is-invalid'}`} aria-label="Default select example" id="common-sequences" value={this.state.preloadedRef ?? ''} onChange={this.setPreloadedRef}>
 									<option value="">Select a Reference Sequence</option>
 									{this.state.preloadRefOptions}
 								</select>
