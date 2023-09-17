@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const url = 'http://localhost:8000';
+const url = 'http://localhost:5173';
 
 test('page load', async ({ page }) => {
 	const errors: string[] = [];
