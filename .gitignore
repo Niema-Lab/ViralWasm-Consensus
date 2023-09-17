@@ -25,3 +25,10 @@ dist-ssr
 test/
 
 .env
+
+# Playwright
+/e2e/results/
+/e2e/report/
+/test-results/
+/playwright-report/
+/playwright/.cache/
