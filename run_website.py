@@ -62,7 +62,7 @@ def start_server(port):
     try:
         with socketserver.ThreadingTCPServer(("", port), Handler) as httpd:
             print(f'Visit http://localhost:{port} for ViralWasm-Consensus. Please leave this window open! To stop running the site, just close the window.')
-            webbrowser.open(f"http://localhost:{port}") if os.environ.get("BROWSER") == "true" else None
+            webbrowser.open(f"http://localhost:{port}/") 
             httpd.serve_forever()
     except KeyboardInterrupt:
         print("Stopping server...")

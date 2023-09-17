@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint src --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "host": "python3 run_website.py"
+    "host": "python3 run_website.py",
+    "host-dev": "http-server dist/ -p 8000 -c-1"
   },
   "dependencies": {
     "@biowasm/aioli": "^3.1.0",
@@ -30,6 +31,7 @@
     "eslint-plugin-react": "^7.32.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.3.4",
+    "http-server": "^14.1.1",
     "vite": "^4.3.2",
     "vite-plugin-pwa": "^0.16.4"
   }

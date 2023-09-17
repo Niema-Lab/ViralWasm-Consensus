@@ -103,7 +103,7 @@ export class App extends Component {
 			})
 		}, () => {
 			CLEAR_LOG()
-			LOG("ViralConsensus Online Tool loaded.")
+			LOG("ViralWasm-Consensus loaded.")
 		})
 
 		this.preventNumberInputScrolling();
