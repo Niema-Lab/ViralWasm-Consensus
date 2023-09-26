@@ -34,8 +34,8 @@ test('run example data', async ({ page, browserName }) => {
 	await expect(page.getByTestId('output-text')).toHaveValue(/Done! Time Elapsed:/, { timeout: 10000 });
 	const timeElapsed = (await page.getByTestId('duration-text').textContent())?.replace(/[^0-9\.]/g, '') ?? '-1';
 	await expect(parseFloat(timeElapsed)).toBeGreaterThan(0);
-	await downloadFile(page, 'Download', 'e2e/results/' + browserName + '/example/');
-	fs.appendFileSync('e2e/results/' + browserName + '/example/time.txt', timeElapsed);
+	await downloadFile(page, 'Download', 'benchmarks/' + browserName + '/example/');
+	fs.appendFileSync('benchmarks/' + browserName + '/example/time.txt', timeElapsed);
 });
 
 const runBenchmark = async (page, browserName: string, alignmentFiles: string[], referenceFile, downloadedLocation: string, runTimeout: number) => {
@@ -47,8 +47,8 @@ const runBenchmark = async (page, browserName: string, alignmentFiles: string[],
 	await expect(page.getByTestId('output-text')).toHaveValue(/Done! Time Elapsed:/, { timeout: runTimeout });
 	const timeElapsed = (await page.getByTestId('duration-text').textContent())?.replace(/[^0-9\.]/g, '') ?? '-1';
 	await expect(parseFloat(timeElapsed)).toBeGreaterThan(0);
-	await downloadFile(page, 'Download Consensus FASTA', 'e2e/results/' + browserName + '/' + downloadedLocation + '/');
-	fs.appendFileSync('e2e/results/' + browserName + '/' + downloadedLocation + '/time.txt', timeElapsed);
+	await downloadFile(page, 'Download Consensus FASTA', 'benchmarks/' + browserName + '/' + downloadedLocation + '/');
+	fs.appendFileSync('benchmarks/' + browserName + '/' + downloadedLocation + '/time.txt', timeElapsed);
 }
 
 test('run example data - uploaded', async ({ page, browserName }) => {
