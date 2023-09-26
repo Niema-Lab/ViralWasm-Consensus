@@ -26,6 +26,6 @@ jobs:
     - uses: actions/upload-artifact@v3
       if: always()
       with:
-        name: playwright-report
+        name: benchmarks
         path: e2e/results/
         retention-days: 30

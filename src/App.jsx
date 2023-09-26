@@ -706,7 +706,7 @@ export class App extends Component {
 						<div id="input-content">
 							<div className="d-flex flex-column mb-4">
 								<label htmlFor="alignment-files" className="form-label">Upload Input Reads File(s) (BAM, SAM, FASTQ(s))<span className="text-danger"> *</span></label>
-								<input className={`form-control ${!this.state.alignmentFilesValid && 'is-invalid'}`} type="file" multiple accept=".sam,.bam,.fastq,.fastq.gz,.fq,.fq.gz" id="alignment-files" onChange={this.uploadAlignmentFiles} />
+								<input className={`form-control ${!this.state.alignmentFilesValid && 'is-invalid'}`} type="file" multiple accept=".sam,.bam,.fastq,.fastq.gz,.fq,.fq.gz" id="alignment-files" data-testid="alignment-files" onChange={this.uploadAlignmentFiles} />
 								{this.state.alignmentFiles === 'EXAMPLE_DATA' &&
 									<p className="mt-2 mb-0"><strong>Using Loaded Example file: <a
 										href={`${import.meta.env.BASE_URL || ''}${EXAMPLE_ALIGNMENT_FILE}`}
@@ -760,7 +760,7 @@ export class App extends Component {
 							<div className="d-flex flex-column mb-4">
 								<label htmlFor="reference-file" className="form-label">Reference File (FASTA)<span className="text-danger"> *</span></label>
 								<div className="input-group">
-									<input className={`form-control ${!this.state.refFileValid && 'is-invalid'}`} type="file" id="reference-file" onChange={this.uploadRefFile} />
+									<input className={`form-control ${!this.state.refFileValid && 'is-invalid'}`} type="file" id="reference-file" data-testid="reference-file" onChange={this.uploadRefFile} />
 									<button className="btn btn-outline-danger" type="button" id="reference-file-addon" onClick={this.clearRefFile}><i className="bi bi-trash"></i></button>
 								</div>
 							</div>
