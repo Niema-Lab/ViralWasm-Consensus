@@ -98,11 +98,13 @@ export class App extends Component {
 				tool: "fastp",
 				version: FASTP_VERSION,
 				urlPrefix: `${window.location.origin}${import.meta.env.BASE_URL || ''}tools/fastp`,
-			}], {
+			}, "coreutils/du/8.32"], {
 				printInterleaved: false,
 			})
-		}, () => {
+		}, async () => {
 			CLEAR_LOG()
+			window.CLI = this.state.CLI;
+			console.log(await this.getTotalMemory('/'));
 			LOG("ViralWasm-Consensus loaded.")
 		})
 
@@ -558,6 +560,7 @@ export class App extends Component {
 		const minimapOutputExists = !!(await CLI.ls(MINIMAP_OUTPUT_FILE_NAME));
 		this.setState({ done: true, timeElapsed: ((performance.now() - startTime) / 1000).toFixed(3), consensusExists, posCountsExists, insCountsExists, fastpOutputExists, minimapOutputExists, loading: false })
 		LOG(`Done! Time Elapsed: ${((performance.now() - startTime) / 1000).toFixed(3)} seconds`);
+		console.log(await this.getTotalMemory('/'));
 	}
 
 	trimInput = async (alignmentFileData) => {
@@ -658,6 +661,30 @@ export class App extends Component {
 
 	hideOfflineInstructions = () => {
 		this.setState({ showOfflineInstructions: false })
+	}
+
+	getTotalMemory = async (dir) => {
+		const CLI = this.state.CLI;
+		let size = 0;
+		try {
+			const ls = await CLI.ls(dir);
+		} catch (e) {
+			return 0;
+		}
+
+		if (!Array.isArray(await CLI.ls(dir))) {
+			return (await CLI.ls(dir)).size;
+		}
+
+		for (const file of await CLI.ls(dir)) {
+			if (file === '.' || file === '..') {
+				continue;
+			}
+
+			size += await this.getTotalMemory(dir + file + '/');
+		}
+
+		return size;
 	}
 
 	render() {
@@ -821,11 +848,11 @@ export class App extends Component {
 						</div>
 
 						<button type="button" className="mt-3 btn btn-danger w-100" onClick={this.promptResetInput}>Reset Input</button>
-						<button type="button" className={`w-100 btn btn-${(this.state.alignmentFiles === 'EXAMPLE_DATA') ? 'success' : 'warning'} mt-3`} onClick={this.toggleLoadExampleData}>
+						<button type="button" className={`w-100 btn btn-${(this.state.alignmentFiles === 'EXAMPLE_DATA') ? 'success' : 'warning'} mt-3`} onClick={this.toggleLoadExampleData} data-testid="load-example-data">
 							Load Example Data {(this.state.alignmentFiles === 'EXAMPLE_DATA') && <strong>(Currently Using Example Files!)</strong>}
 						</button>
 
-						<button type="button" className="btn btn-primary w-100 mt-3" onClick={this.runViralConsensus}>Run ViralWasm-Consensus</button>
+						<button type="button" className="btn btn-primary w-100 mt-3" onClick={this.runViralConsensus} data-testid='run'>Run ViralWasm-Consensus</button>
 					</div>
 
 					<div id="output" className={`form-group ms-4 me-5 ${this.state.expandedContainer === 'output' && 'full-width-container'} ${this.state.expandedContainer === 'input' && 'd-none'}`}>
@@ -835,7 +862,7 @@ export class App extends Component {
 								<i className={`bi bi-${this.state.expandedContainer === 'output' ? 'arrows-angle-contract' : 'arrows-fullscreen'}`} onClick={() => this.toggleExpandContainer('output')}></i>
 							</h4>
 						</div>
-						<textarea className="form-control" id="output-text" rows="3" disabled></textarea>
+						<textarea className="form-control" id="output-text" data-testid="output-text" rows="3" disabled></textarea>
 						{this.state.loading && <img id="loading" className="mt-3" src={loading} />}
 						{(this.state.done && (this.state.consensusExists || this.state.posCountsExists || this.state.insCountsExists) &&
 							<p className="mt-4 mb-2">ViralConsensus Output Files: </p>)}
@@ -852,7 +879,7 @@ export class App extends Component {
 						</div>
 						<div id="duration" className="my-3">
 							{this.state.timeElapsed &&
-								<p id="duration-text">Total runtime: {this.state.timeElapsed} seconds</p>
+								<p id="duration-text" data-testid="duration-text">Total runtime: {this.state.timeElapsed} seconds</p>
 							}
 							{this.state.running && !this.state.done &&
 								<Fragment>
