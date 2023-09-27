@@ -61,7 +61,6 @@ jobs:
       - run: npx playwright install --with-deps
         if: steps.playwright-cache.outputs.cache-hit != 'true'
       - run: npx playwright install-deps
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
       - name: Run Playwright deployment tests
         run: npx playwright test site-tests.spec.ts
       - name: Build for github pages
