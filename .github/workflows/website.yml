@@ -24,18 +24,18 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       # - name: Setup cache
       #   id: cache-system-libraries
       #   uses: actions/cache@v3
       #   with:
-      #     path: 'benchmarks-cache'
-      #     key: ${{ runner.os }}
+        #     path: 'benchmarks-cache'
+        #     key: ${{ runner.os }}
       - name: Download data for benchmarks
         run: |
           mkdir e2e/data
           cd e2e/data
           curl -LO https://github.com/niemasd/ViralConsensus-Paper/raw/main/data/time_memory_benchmark/reads.fastq.gz
-      - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           node-version: 18
