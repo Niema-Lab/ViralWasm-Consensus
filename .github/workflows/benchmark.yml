@@ -11,8 +11,6 @@ on:
 # Sets the GITHUB_TOKEN permissions to allow deployment to GitHub Pages
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 # Allow one concurrent deployment
 concurrency:
@@ -35,7 +33,7 @@ jobs:
           node-version: 18
       - name: Install dependencies
         run: npm ci
-      - name: Build site for Playwright and offline mode
+      - name: Build site for Playwright
         env: 
           VITE_OFFLINE_VERSION: true
         run: npm run build
