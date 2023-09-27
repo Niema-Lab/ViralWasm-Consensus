@@ -10,7 +10,7 @@ const BENCHMARK_TESTS = {
 		timeout: 10000
 	},
 	large: {
-		referenceFiles: ['./public/data/reads.fastq.gz'], 
+		referenceFiles: ['./e2e/data/reads.fastq.gz'], 
 		alignmentFile: './public/data/NC_045512.2.fas', 
 		outputFolder: 'large-dataset/', 
 		timeout: 240000
