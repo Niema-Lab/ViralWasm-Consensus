@@ -21,8 +21,48 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Single deploy job since we're just deploying
+  benchmark:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 18
+    - name: Install dependencies
+      run: npm ci
+    - name: Build site
+      env: 
+        VITE_OFFLINE_VERSION: true
+      run: npm run build
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps
+    - name: Run Playwright tests
+      run: npx playwright test
+    - uses: actions/upload-artifact@v3
+      with:
+        name: benchmarks
+        path: benchmarks/
+        retention-days: 30
+    - name: Push benchmarks to repo
+      env: 
+        VITE_OFFLINE_VERSION: true
+      run: |  
+        git config --global user.name 'GitHub Actions'
+        git config --global user.email 'action@github.com'
+        git add .
+
+        # Check for changes
+        if git diff-index --quiet HEAD --; then
+          # No changes
+          echo "No changes to commit"
+        else
+          # Changes detected
+          git commit -m "Add benchmarks"
+          git push origin master
+        fi
   deploy:
+    needs: benchmark
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
