@@ -45,8 +45,8 @@ test('run example data', async ({ page, browserName }) => {
 	await expect(page.getByTestId('output-text')).toHaveValue(/Done! Time Elapsed:/, { timeout: 10000 });
 	const timeElapsed = (await page.getByTestId('duration-text').textContent())?.replace(/[^0-9\.]/g, '') ?? '-1';
 	await expect(parseFloat(timeElapsed)).toBeGreaterThan(0);
-	await downloadFile(page, 'Download', BENCHMARK_DIR + browserName + '/example/');
-	fs.appendFileSync(BENCHMARK_DIR + browserName + '/example/time.txt', timeElapsed);
+	await downloadFile(page, 'Download', BENCHMARK_DIR + 'example/' + browserName + '/');
+	fs.appendFileSync(BENCHMARK_DIR + 'example/' + browserName + '/' + '/time.txt', timeElapsed);
 });
 
 for (const [name, { referenceFiles, alignmentFile, outputFolder, timeout }] of Object.entries(BENCHMARK_TESTS)) {
