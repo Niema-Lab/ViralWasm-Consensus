@@ -29,3 +29,4 @@ test/
 # Playwright
 /e2e/report/
 /e2e/data/
+benchmarks/
