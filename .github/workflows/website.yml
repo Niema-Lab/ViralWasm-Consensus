@@ -25,12 +25,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Setup cache
-        id: cache-system-libraries
-        uses: actions/cache@v3
-        with:
-            path: 'benchmarks-cache'
-            key: ${{ runner.os }}
       - name: Download data for benchmarks
         run: |
           mkdir e2e/data
@@ -60,8 +54,19 @@ jobs:
             git commit -m "Add benchmarks / dist folder"
             git push origin master
           fi
+      - name: Get installed Playwright version
+        id: playwright-version
+        run: echo "PLAYWRIGHT_VERSION=$(node -e "console.log(require('./package-lock.json').dependencies['@playwright/test'].version)")" >> $GITHUB_ENV
+      - name: Cache Playwright binaries
+        uses: actions/cache@v3
+        id: playwright-cache
+        with:
+          path: |
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
       - name: Run Playwright tests
         run: npx playwright test
       - uses: actions/upload-artifact@v3
