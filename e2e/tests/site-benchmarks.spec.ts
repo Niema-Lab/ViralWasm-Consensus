@@ -6,14 +6,14 @@ import { downloadFile, BENCHMARK_DIR} from './constants';
 const BENCHMARK_TESTS = {
 	// TODO: change names
 	small: {
-		alignmentFiles: ['./public/data/example.bam'], 
-		referenceFile: './public/data/NC_045512.2.fas', 
+		alignmentFiles: ['./e2e/data/example.bam'], 
+		referenceFile: './e2e/data/NC_045512.2.fas', 
 		outputFolder: 'example-uploaded/',
 		timeout: 10000
 	},
 	large: {
 		alignmentFiles: ['./e2e/data/reads.fastq.gz'], 
-		referenceFile: './public/data/NC_045512.2.fas', 
+		referenceFile: './e2e/data/NC_045512.2.fas', 
 		outputFolder: 'large-dataset/', 
 		timeout: 240000
 	}

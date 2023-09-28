@@ -1,3 +1,8 @@
+# Install minimap2 
+cd ~
+git clone https://github.com/lh3/minimap2
+cd minimap2 && make
+
 # Install ViralConsensus 
 sudo apt-get update && sudo apt-get install -y libbz2-dev libcurl4-openssl-dev liblzma-dev
 cd ~
@@ -6,7 +11,6 @@ cd ViralConsensus
 make
 sudo mv viral_consensus /usr/local/bin/
 
-# Run ViralConsensus
+# Confirm ViralConsensus is installed
 viral_consensus --version
-ls 
-tree
+
