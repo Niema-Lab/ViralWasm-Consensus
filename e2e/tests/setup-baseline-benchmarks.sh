@@ -2,6 +2,7 @@
 cd ~
 git clone https://github.com/lh3/minimap2
 cd minimap2 && make
+sudo mv minimap2 /usr/local/bin/
 
 minimap2 --version
 
