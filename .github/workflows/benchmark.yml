@@ -27,10 +27,14 @@ jobs:
           mkdir e2e/data
           cd e2e/data
           curl -LO https://github.com/niemasd/ViralConsensus-Paper/raw/main/data/time_memory_benchmark/reads.fastq.gz
+      - name: Run cli benchmarks
+        run: |
+          cd e2e/tests/
+          bash baseline-tests.sh
       - uses: actions/setup-node@v3
         with:
           node-version: 18
-      - name: Install dependencies
+      - name: Install site benchmark dependencies
         run: npm ci
       - name: Build site for Playwright
         env: 
