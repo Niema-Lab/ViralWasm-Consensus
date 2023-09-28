@@ -33,7 +33,7 @@ jobs:
       - name: Run cli benchmark tests
         run: |
           cd e2e/tests/
-          bash run-baseline-benchmarks.sh
+          echo "FOO=$(bash run-baseline-benchmarks.sh)"
       - uses: actions/setup-node@v3
         with:
           node-version: 18
