@@ -61,5 +61,9 @@ jobs:
         run: npx playwright test site-benchmarks.spec.ts
       - uses: actions/upload-artifact@v3
         with:
-          name: benchmarks
+          name: site-benchmarks
           path: benchmarks/
+      - uses: actions/upload-artifact@v3
+        with:
+          name: cli-benchmarks
+          path: e2e/data/
