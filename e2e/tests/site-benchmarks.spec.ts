@@ -5,16 +5,40 @@ import { downloadFile, BENCHMARK_DIR} from './constants';
 
 const BENCHMARK_TESTS = {
 	// TODO: change names
-	small: {
+	'example': {
 		alignmentFiles: ['./e2e/data/example.bam'], 
 		referenceFile: './e2e/data/NC_045512.2.fas', 
 		outputFolder: 'example-uploaded/',
 		timeout: 10000
 	},
-	large: {
+	'100': {
+		alignmentFiles: ['./e2e/data/reads_100.fastq.gz'],
+		referenceFile: './e2e/data/NC_045512.2.fas',
+		outputFolder: '100/',
+		timeout: 10000
+	},
+	'1000': {
+		alignmentFiles: ['./e2e/data/reads_1k.fastq.gz'],
+		referenceFile: './e2e/data/NC_045512.2.fas',
+		outputFolder: '1000/',
+		timeout: 10000
+	},
+	'10000': {
+		alignmentFiles: ['./e2e/data/reads_10k.fastq.gz'],
+		referenceFile: './e2e/data/NC_045512.2.fas',
+		outputFolder: '10000/',
+		timeout: 20000
+	},
+	'100000': {
+		alignmentFiles: ['./e2e/data/reads_100k.fastq.gz'],
+		referenceFile: './e2e/data/NC_045512.2.fas',
+		outputFolder: '100000/',
+		timeout: 60000
+	},
+	'1000000': {
 		alignmentFiles: ['./e2e/data/reads.fastq.gz'], 
 		referenceFile: './e2e/data/NC_045512.2.fas', 
-		outputFolder: 'large-dataset/', 
+		outputFolder: '1000000/', 
 		timeout: 240000
 	}
 }
