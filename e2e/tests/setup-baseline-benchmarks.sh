@@ -11,6 +11,7 @@ sudo apt-get update && sudo apt-get install -y libbz2-dev libcurl4-openssl-dev l
 cd ~
 git clone https://github.com/niemasd/ViralConsensus.git
 cd ViralConsensus
+git submodule update --init --recursive
 make
 sudo mv viral_consensus /usr/local/bin/
 
