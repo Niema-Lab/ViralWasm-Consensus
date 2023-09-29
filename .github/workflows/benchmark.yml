@@ -26,6 +26,10 @@ jobs:
         run: |
           cd e2e/tests/
           bash download-benchmark-data.sh
+      - name: Setup cli benchmark dependencies
+        run: |
+          cd e2e/tests/
+          bash setup-baseline-benchmarks.sh
       - uses: actions/setup-node@v3
         with:
           node-version: 18
@@ -51,10 +55,6 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
       - name: Run Playwright benchmark tests
         run: npx playwright test site-benchmarks.spec.ts
-      - name: Setup cli benchmark dependencies
-        run: |
-          cd e2e/tests/
-          bash setup-baseline-benchmarks.sh
       - name: Run cli benchmark tests
         run: |
           cd e2e/tests/
