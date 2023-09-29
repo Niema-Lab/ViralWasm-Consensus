@@ -18,6 +18,9 @@ autoreconf -i
 make
 sudo make install
 
+echo 'export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/lib"' >> ~/.bashrc
+source ~/.bashrc
+
 cd ~
 git clone https://github.com/niemasd/ViralConsensus.git
 cd ViralConsensus
