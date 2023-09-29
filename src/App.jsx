@@ -536,7 +536,9 @@ export class App extends Component {
 
 		// Generate consensus genome (run viral_consensus)
 		LOG("Executing command: " + command)
+		const viralConsensusStartTime = performance.now();
 		const commandError = await CLI.exec(command);
+		LOG(`ViralConsensus finished in ${((performance.now() - viralConsensusStartTime) / 1000).toFixed(3)} seconds`)
 
 		// Error handling
 		if (commandError.stderr !== '') {
