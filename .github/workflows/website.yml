@@ -34,21 +34,6 @@ jobs:
         env: 
           VITE_OFFLINE_VERSION: true
         run: npm run build
-      - name: Push offline mode to master
-        run: |  
-          git config --global user.name 'GitHub Actions'
-          git config --global user.email 'action@github.com'
-          git add .
-
-          # Check for changes
-          if git diff-index --quiet HEAD --; then
-            # No changes
-            echo "No changes to commit"
-          else
-            # Changes detected
-            git commit -m "Add benchmarks / dist folder"
-            git push origin master
-          fi
       - name: Get installed Playwright version
         id: playwright-version
         run: echo "PLAYWRIGHT_VERSION=$(node -e "console.log(require('./package.json').devDependencies['@playwright/test'])")" >> $GITHUB_ENV
@@ -65,6 +50,21 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
       - name: Run Playwright deployment tests
         run: npx playwright test site-tests.spec.ts
+      - name: Push offline mode to master
+        run: |  
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'action@github.com'
+          git add .
+
+          # Check for changes
+          if git diff-index --quiet HEAD --; then
+            # No changes
+            echo "No changes to commit"
+          else
+            # Changes detected
+            git commit -m "Add benchmarks / dist folder"
+            git push origin master
+          fi
       - name: Build for github pages
         run: npm run build
       - name: Setup Pages

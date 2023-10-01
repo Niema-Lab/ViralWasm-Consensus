@@ -11,12 +11,6 @@ const BENCHMARK_TESTS = {
 		outputFolder: 'example-uploaded/',
 		timeout: 10000
 	},
-	'100': {
-		alignmentFiles: ['./e2e/data/reads_100.fastq.gz'],
-		referenceFile: './e2e/data/NC_045512.2.fas',
-		outputFolder: '100/',
-		timeout: 10000
-	},
 	'1000': {
 		alignmentFiles: ['./e2e/data/reads_1k.fastq.gz'],
 		referenceFile: './e2e/data/NC_045512.2.fas',

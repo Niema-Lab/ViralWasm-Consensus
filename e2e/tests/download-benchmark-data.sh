@@ -25,6 +25,3 @@ seqtk sample -s100 reads.fastq.gz 10000 | gzip > reads_10k.fastq.gz
 
 # Subsample: 1k reads
 seqtk sample -s100 reads.fastq.gz 1000 | gzip > reads_1k.fastq.gz
-
-# Subsample: 100 reads
-seqtk sample -s100 reads.fastq.gz 100 | gzip > reads_100.fastq.gz

@@ -804,7 +804,7 @@ export class App extends Component {
 								</div>
 							</div>
 
-							<h6 className="mt-5" id="additional-arguments" onClick={() => this.toggleAdditionalArgs()}>ViralConsensus Additional Arguments <i className={`bi bi-chevron-${this.state.tn93Open ? 'up' : 'down'}`}></i></h6>
+							<h6 className="mt-5" id="additional-arguments" onClick={() => this.toggleAdditionalArgs()}>ViralConsensus Additional Arguments <i className={`bi bi-chevron-${this.state.additionalArgsOpen ? 'up' : 'down'}`}></i></h6>
 							<hr></hr>
 
 							<div className={`${this.state.additionalArgsOpen ? '' : 'd-none'}`}>
