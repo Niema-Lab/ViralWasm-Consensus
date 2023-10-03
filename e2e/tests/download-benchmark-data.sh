@@ -1,4 +1,3 @@
-# TODO: setup github cache
 SCRIPTPATH=$(dirname "$PWD")
 
 # Install seqtk

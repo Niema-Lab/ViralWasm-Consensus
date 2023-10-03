@@ -1,3 +1,4 @@
+# TODO: cache minimap2 / ViralConsensus binaries? Don't even need to make?
 # Install minimap2 
 cd ~
 git clone https://github.com/lh3/minimap2

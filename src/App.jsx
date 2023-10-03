@@ -182,7 +182,7 @@ export class App extends Component {
 		})
 	}
 
-	uploadRefFile = (e) => {
+	selectRefFile = (e) => {
 		this.setState({ refFile: e.target.files[0], refFileValid: true, inputChanged: true })
 	}
 
@@ -198,7 +198,7 @@ export class App extends Component {
 		this.setState({ preloadedRef: event.target.value === 'undefined' ? undefined : event.target.value, inputChanged: true, refFileValid: true })
 	}
 
-	uploadAlignmentFiles = (e) => {
+	selectAlignmentFiles = (e) => {
 		const currentAlignmentFiles = this.state.alignmentFiles === 'EXAMPLE_DATA' ? [] : this.state.alignmentFiles;
 		const alignmentFiles = [...(currentAlignmentFiles || []), ...Array.from(e.target.files)];
 		this.setState({
@@ -280,7 +280,7 @@ export class App extends Component {
 		this.setState({ trimPolyX: e.target.checked, inputChanged: true })
 	}
 
-	uploadPrimerFile = (e) => {
+	selectPrimerFile = (e) => {
 		this.setState({ primerFile: e.target.files[0], inputChanged: true })
 	}
 
@@ -470,9 +470,9 @@ export class App extends Component {
 			await CLI.fs.writeFile(DEFAULT_ALIGNMENT_BAM_FILE_NAME, new Uint8Array(this.state.exampleAlignmentFile));
 		} else {
 			const alignmentFileData = await this.fileReaderReadFile(this.state.alignmentFiles[0], true);
-			const uploadedFileName = this.state.alignmentFiles[0].name;
-			if (uploadedFileName.endsWith('.bam') ||
-				uploadedFileName.endsWith('.sam')) {
+			const selectedFileName = this.state.alignmentFiles[0].name;
+			if (selectedFileName.endsWith('.bam') ||
+				selectedFileName.endsWith('.sam')) {
 				// Handle bam/sam files, don't need to run minimap2 
 				LOG("Recognized alignment file as BAM/SAM, reading file...")
 				await CLI.fs.writeFile(alignmentFileName, new Uint8Array(alignmentFileData));
@@ -486,7 +486,7 @@ export class App extends Component {
 					const alignmentFile = this.state.alignmentFiles[i];
 					let alignmentFileData = await this.fileReaderReadFile(alignmentFile, true);
 					if (!IS_GZIP(alignmentFileData)) {
-						LOG("Gzipping uploaded alignment file " + alignmentFile.name + " before running minimap2...")
+						LOG("Gzipping selected alignment file " + alignmentFile.name + " before running minimap2...")
 						alignmentFileData = Pako.gzip(alignmentFileData);
 					} else {
 						LOG("Alignment file " + alignmentFile.name + " is already gzipped, skipping gzip...")
@@ -707,8 +707,8 @@ export class App extends Component {
 						</div>
 						<div id="input-content">
 							<div className="d-flex flex-column mb-4">
-								<label htmlFor="alignment-files" className="form-label">Upload Input Reads File(s) (BAM, SAM, FASTQ(s))<span className="text-danger"> *</span></label>
-								<input className={`form-control ${!this.state.alignmentFilesValid && 'is-invalid'}`} type="file" multiple accept=".sam,.bam,.fastq,.fastq.gz,.fq,.fq.gz" id="alignment-files" data-testid="alignment-files" onChange={this.uploadAlignmentFiles} />
+								<label htmlFor="alignment-files" className="form-label">Select Input Reads File(s) (BAM, SAM, FASTQ(s))<span className="text-danger"> *</span></label>
+								<input className={`form-control ${!this.state.alignmentFilesValid && 'is-invalid'}`} type="file" multiple accept=".sam,.bam,.fastq,.fastq.gz,.fq,.fq.gz" id="alignment-files" data-testid="alignment-files" onChange={this.selectAlignmentFiles} />
 								{this.state.alignmentFiles === 'EXAMPLE_DATA' &&
 									<p className="mt-2 mb-0"><strong>Using Loaded Example file: <a
 										href={`${import.meta.env.BASE_URL || ''}${EXAMPLE_ALIGNMENT_FILE}`}
@@ -716,10 +716,10 @@ export class App extends Component {
 								}
 							</div>
 
-							{/* NOTE: we assume here that if they upload more than one file, they are intending to upload multiple FASTQ files */}
+							{/* NOTE: we assume here that if they select more than one file, they are intending to select multiple FASTQ files */}
 							{typeof this.state.alignmentFiles === 'object' && this.state.alignmentFiles.length > 0 &&
 								<div id="alignment-files-list" className={`d-flex flex-column mb-4`}>
-									<p>Uploaded Input Reads Files (If multiple files, must all be FASTQ):</p>
+									<p>Selected Input Reads Files (If multiple files, must all be FASTQ):</p>
 									<ul className="list-group">
 										{this.state.alignmentFiles.map((file, i) => {
 											const validFile = !ARE_FASTQ([file]) && this.state.alignmentFiles.length !== 1;
@@ -747,7 +747,7 @@ export class App extends Component {
 									Select Preloaded Reference Sequence
 									{this.state.refFile !== undefined &&
 										<span className='mt-2 text-warning'>
-											<strong>&nbsp;(Using Uploaded Sequence)</strong>
+											<strong>&nbsp;(Using Selected Sequence)</strong>
 										</span>
 									}
 								</label>
@@ -762,7 +762,7 @@ export class App extends Component {
 							<div className="d-flex flex-column mb-4">
 								<label htmlFor="reference-file" className="form-label">Reference File (FASTA)<span className="text-danger"> *</span></label>
 								<div className="input-group">
-									<input className={`form-control ${!this.state.refFileValid && 'is-invalid'}`} type="file" id="reference-file" data-testid="reference-file" onChange={this.uploadRefFile} />
+									<input className={`form-control ${!this.state.refFileValid && 'is-invalid'}`} type="file" id="reference-file" data-testid="reference-file" onChange={this.selectRefFile} />
 									<button className="btn btn-outline-danger" type="button" id="reference-file-addon" onClick={this.clearRefFile}><i className="bi bi-trash"></i></button>
 								</div>
 							</div>
@@ -811,7 +811,7 @@ export class App extends Component {
 
 								<div className="d-flex flex-column mb-4">
 									<label htmlFor="primer-file" className="form-label">Primer (BED) File</label>
-									<input className="form-control" type="file" id="primer-file" onChange={this.uploadPrimerFile} />
+									<input className="form-control" type="file" id="primer-file" onChange={this.selectPrimerFile} />
 								</div>
 
 								<label htmlFor="min-base-quality" className="form-label">Primer Offset</label>

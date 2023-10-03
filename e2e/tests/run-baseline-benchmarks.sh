@@ -1,7 +1,7 @@
 cd ../data
 
 ### TEST #1: Example data
-OUT_DIR=../../benchmarks/example-uploaded/cli/
+OUT_DIR=../../benchmarks/example-selected/cli/
 mkdir -p $OUT_DIR
 
 /usr/bin/time -v viral_consensus -i example.bam -r NC_045512.2.fas -o "$OUT_DIR/consensus.fa" -q 20 -d 10 -f 0.5 -a N 2>time_output.log

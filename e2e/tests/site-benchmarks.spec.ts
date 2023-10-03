@@ -4,11 +4,10 @@ import fs from 'fs';
 import { downloadFile, BENCHMARK_DIR} from './constants';
 
 const BENCHMARK_TESTS = {
-	// TODO: change names
 	'example': {
 		alignmentFiles: ['./e2e/data/example.bam'], 
 		referenceFile: './e2e/data/NC_045512.2.fas', 
-		outputFolder: 'example-uploaded/',
+		outputFolder: 'example-selected/',
 		timeout: 10000
 	},
 	'1000': {
