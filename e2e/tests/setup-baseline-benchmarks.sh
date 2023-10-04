@@ -7,6 +7,14 @@ sudo mv minimap2 /usr/local/bin/
 
 minimap2 --version
 
+# Install seqtk
+cd ~
+git clone https://github.com/lh3/seqtk.git
+cd seqtk
+make
+sudo cp seqtk /usr/local/bin/
+seqtk
+
 # Install ViralConsensus 
 cd ~
 sudo apt-get update

@@ -1,45 +1,14 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 
-import { downloadFile, BENCHMARK_DIR} from './constants';
+import { downloadFile, BENCHMARK_DIR, BENCHMARK_TESTS, RUN_COUNT } from './constants';
 
-const BENCHMARK_TESTS = {
-	'example': {
-		alignmentFiles: ['./e2e/data/example.bam'], 
-		referenceFile: './e2e/data/NC_045512.fas', 
-		outputFolder: 'example-selected/',
-		timeout: 10000
-	},
-	'1000': {
-		alignmentFiles: ['./e2e/data/reads_1k.fastq.gz'],
-		referenceFile: './e2e/data/NC_045512.fas',
-		outputFolder: '1000/',
-		timeout: 10000
-	},
-	'10000': {
-		alignmentFiles: ['./e2e/data/reads_10k.fastq.gz'],
-		referenceFile: './e2e/data/NC_045512.fas',
-		outputFolder: '10000/',
-		timeout: 20000
-	},
-	'100000': {
-		alignmentFiles: ['./e2e/data/reads_100k.fastq.gz'],
-		referenceFile: './e2e/data/NC_045512.fas',
-		outputFolder: '100000/',
-		timeout: 60000
-	},
-	'1000000': {
-		alignmentFiles: ['./e2e/data/reads.fastq.gz'], 
-		referenceFile: './e2e/data/NC_045512.fas', 
-		outputFolder: '1000000/', 
-		timeout: 240000
+for (let i = 1; i <= RUN_COUNT; i++) {
+	for (const sequenceSize of BENCHMARK_TESTS) {
+		test('run benchmark - ' + sequenceSize + ', run ' + i, async ({ page, browserName }) => {
+			await runBenchmark(page, browserName, ['./e2e/data/reads_' + sequenceSize + '.sam'], './e2e/data/NC_045512.fas', sequenceSize + '.' + i + '/', 240000);
+		});
 	}
-}
-
-for (const [name, { referenceFile, alignmentFiles, outputFolder, timeout }] of Object.entries(BENCHMARK_TESTS)) {
-	test('run benchmark - ' + name, async ({ page, browserName }) => {
-		await runBenchmark(page, browserName, alignmentFiles, referenceFile, outputFolder, timeout);
-	});
 }
 
 const runBenchmark = async (page, browserName: string, alignmentFiles: string[], referenceFile: string, downloadedLocation: string, runTimeout: number) => {
