@@ -1,3 +1,4 @@
+// TODO: mem leak is not fixed with reinit, determine if minimap2 or viral_consensus or something else
 // TODO: PWA? 
 import React, { Component } from 'react'
 import Pako from 'pako';
@@ -27,7 +28,7 @@ import {
 	TEMP_FASTP_OUTPUT,
 	COMBINED_SEQUENCES_FILE_NAME,
 	FASTP_OUTPUT_FILE_NAME,
-	MINIMAP_OUTPUT_FILE_NAME,
+	MINIMAP2_OUTPUT_FILE_NAME,
 	EXAMPLE_REF,
 	DEFAULT_REF_FILE_NAME,
 	DEFAULT_PRIMER_FILE_NAME,
@@ -77,7 +78,7 @@ export class App extends Component {
 			posCountsExists: false,
 			insCountsExists: false,
 			fastpOutputExists: false,
-			minimapOutputExists: false,
+			minimap2OutputExists: false,
 			loading: false,
 			inputChanged: false
 		}
@@ -103,8 +104,6 @@ export class App extends Component {
 			})
 		}, async () => {
 			CLEAR_LOG()
-			window.CLI = this.state.CLI;
-			console.log(await this.getTotalMemory('/'));
 			LOG("ViralWasm-Consensus loaded.")
 		})
 
@@ -442,14 +441,14 @@ export class App extends Component {
 
 		const startTime = performance.now();
 		LOG("Starting job...")
-		this.setState({ done: false, timeElapsed: undefined, loading: true, inputChanged: false, consensusExists: false, posCountsExists: false, insCountsExists: false, fastpOutputExists: false, minimapOutputExists: false })
+		this.setState({ done: false, timeElapsed: undefined, loading: true, inputChanged: false, consensusExists: false, posCountsExists: false, insCountsExists: false, fastpOutputExists: false, minimap2OutputExists: false })
 
 		const refFileName = DEFAULT_REF_FILE_NAME;
 		const alignmentFileName = (this.state.alignmentFiles[0]?.name?.endsWith('.bam') || this.state.alignmentFiles === 'EXAMPLE_DATA') ?
 			DEFAULT_ALIGNMENT_BAM_FILE_NAME : DEFAULT_ALIGNMENT_SAM_FILE_NAME;
 		const primerFileName = DEFAULT_PRIMER_FILE_NAME;
 
-		let command = `viral_consensus -i ${this.state.alignmentFilesAreFASTQ ? MINIMAP_OUTPUT_FILE_NAME : alignmentFileName} -r ${refFileName} -o ${CONSENSUS_FILE_NAME}`;
+		let command = `viral_consensus -i ${this.state.alignmentFilesAreFASTQ ? MINIMAP2_OUTPUT_FILE_NAME : alignmentFileName} -r ${refFileName} -o ${CONSENSUS_FILE_NAME}`;
 
 		// Delete old files
 		LOG("Deleting old files...")
@@ -499,10 +498,18 @@ export class App extends Component {
 				await this.deleteFile(TEMP_FASTP_INPUT);
 				await this.deleteFile(TEMP_FASTP_OUTPUT);
 
-				await CLI.fs.writeFile(MINIMAP_OUTPUT_FILE_NAME, new Uint8Array());
-				const minimapCommand = `minimap2 -t 1 -a -o ${MINIMAP_OUTPUT_FILE_NAME} ${refFileName} ${sequencesFile}`;
-				LOG("Executing command: " + minimapCommand);
-				await CLI.exec(minimapCommand);
+				await CLI.fs.writeFile(MINIMAP2_OUTPUT_FILE_NAME, new Uint8Array());
+
+				const minimap2Command = `minimap2 -t 1 -a -o ${MINIMAP2_OUTPUT_FILE_NAME} ${refFileName} ${sequencesFile}`;
+				LOG('\n', false);
+				LOG('Aligning sequences...')
+				LOG('Running command: ' + minimap2Command + '\n')
+
+				const minimap2StartTime = performance.now();
+				LOG((await CLI.exec(minimap2Command)).stderr, false);
+				LOG('\n', false);
+				LOG(`Minimap2 finished in ${((performance.now() - minimap2StartTime) / 1000).toFixed(3)} seconds`)
+
 			} else {
 				// Handle other file types, assuming bam/sam, but giving a warning
 				LOG("WARNING: Alignment file extension not recognized. Assuming bam/sam format.")
@@ -535,7 +542,8 @@ export class App extends Component {
 		}
 
 		// Generate consensus genome (run viral_consensus)
-		LOG("Executing command: " + command)
+		LOG('\n', false);
+		LOG("Running command: " + command + "\n")
 		const viralConsensusStartTime = performance.now();
 		const commandError = await CLI.exec(command);
 		LOG(`ViralConsensus finished in ${((performance.now() - viralConsensusStartTime) / 1000).toFixed(3)} seconds`)
@@ -559,10 +567,10 @@ export class App extends Component {
 		const posCountsExists = !!(await CLI.ls(POSITION_COUNTS_FILE_NAME));
 		const insCountsExists = !!(await CLI.ls(INSERTION_COUNTS_FILE_NAME));
 		const fastpOutputExists = !!(await CLI.ls(FASTP_OUTPUT_FILE_NAME));
-		const minimapOutputExists = !!(await CLI.ls(MINIMAP_OUTPUT_FILE_NAME));
-		this.setState({ done: true, timeElapsed: ((performance.now() - startTime) / 1000).toFixed(3), consensusExists, posCountsExists, insCountsExists, fastpOutputExists, minimapOutputExists, loading: false })
+		const minimap2OutputExists = !!(await CLI.ls(MINIMAP2_OUTPUT_FILE_NAME));
+		this.setState({ done: true, timeElapsed: ((performance.now() - startTime) / 1000).toFixed(3), consensusExists, posCountsExists, insCountsExists, fastpOutputExists, minimap2OutputExists, loading: false })
 		LOG(`Done! Time Elapsed: ${((performance.now() - startTime) / 1000).toFixed(3)} seconds`);
-		console.log(await this.getTotalMemory('/'));
+		LOG(`Estimated Peak Memory: ${(await this.getMemory() / 1000000).toFixed(3)} MB`);
 	}
 
 	trimInput = async (alignmentFileData) => {
@@ -590,7 +598,8 @@ export class App extends Component {
 			fastpCommand += ' --trim_poly_x';
 		}
 
-		LOG("Executing command: " + fastpCommand);
+		LOG('\n', false)
+		LOG("Running command: " + fastpCommand);
 		LOG((await CLI.exec(fastpCommand)).stderr);
 		// TODO: Is there a better way to append data w/o an additional read + append? 
 		return await CLI.fs.readFile(TEMP_FASTP_OUTPUT);
@@ -665,28 +674,15 @@ export class App extends Component {
 		this.setState({ showOfflineInstructions: false })
 	}
 
-	getTotalMemory = async (dir) => {
-		const CLI = this.state.CLI;
-		let size = 0;
+	getMemory = async () => {
 		try {
-			const ls = await CLI.ls(dir);
-		} catch (e) {
-			return 0;
+			const result = await performance.measureUserAgentSpecificMemory();
+			this.setState(prevState => ({ peakMemory: Math.max(result.bytes, prevState.peakMemory) }))
+			console.log(result.bytes)
+			return result.bytes;
+		} catch (error) {
+			console.log(error);
 		}
-
-		if (!Array.isArray(await CLI.ls(dir))) {
-			return (await CLI.ls(dir)).size;
-		}
-
-		for (const file of await CLI.ls(dir)) {
-			if (file === '.' || file === '..') {
-				continue;
-			}
-
-			size += await this.getTotalMemory(dir + file + '/');
-		}
-
-		return size;
 	}
 
 	render() {
@@ -873,11 +869,11 @@ export class App extends Component {
 							{(this.state.done && this.state.posCountsExists) && <button type="button" className={`btn btn-primary mx-2 w-100`} onClick={() => this.downloadFile(POSITION_COUNTS_FILE_NAME)}>Download Position Counts</button>}
 							{(this.state.done && this.state.insCountsExists) && <button type="button" className={`btn btn-primary ms-2 w-100`} onClick={() => this.downloadFile(INSERTION_COUNTS_FILE_NAME)}>Download Insertion Counts</button>}
 						</div>
-						{(this.state.done && (this.state.fastpOutputExists || this.state.minimapOutputExists) &&
+						{(this.state.done && (this.state.fastpOutputExists || this.state.minimap2OutputExists) &&
 							<p className="mt-3 mb-2">Other Output Files:</p>)}
 						<div className="download-buttons">
 							{(this.state.done && this.state.fastpOutputExists) && <button type="button" className={`btn btn-primary me-2 w-100`} onClick={() => this.downloadFile(FASTP_OUTPUT_FILE_NAME)}>Download Trimmed Sequences (FASTP)</button>}
-							{(this.state.done && this.state.minimapOutputExists) && <button type="button" className={`btn btn-primary ms-2 w-100`} onClick={() => this.downloadFile(MINIMAP_OUTPUT_FILE_NAME)}>Download Aligned Sequences (Minimap2)</button>}
+							{(this.state.done && this.state.minimap2OutputExists) && <button type="button" className={`btn btn-primary ms-2 w-100`} onClick={() => this.downloadFile(MINIMAP2_OUTPUT_FILE_NAME)}>Download Aligned Sequences (Minimap2)</button>}
 						</div>
 						<div id="duration" className="my-3">
 							{this.state.timeElapsed &&

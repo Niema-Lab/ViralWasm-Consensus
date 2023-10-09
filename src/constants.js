@@ -86,7 +86,7 @@ export const TEMP_FASTP_INPUT = BIOWASM_WORKING_DIR + 'temp.fastq.gz';
 export const TEMP_FASTP_OUTPUT = BIOWASM_WORKING_DIR + 'temp-trimmed.fastq.gz';
 export const COMBINED_SEQUENCES_FILE_NAME = BIOWASM_WORKING_DIR + 'sequences.fastq.gz';
 export const FASTP_OUTPUT_FILE_NAME = BIOWASM_WORKING_DIR + 'trimmed-sequences.fastq.gz';
-export const MINIMAP_OUTPUT_FILE_NAME = BIOWASM_WORKING_DIR + 'reads.sam';
+export const MINIMAP2_OUTPUT_FILE_NAME = BIOWASM_WORKING_DIR + 'reads.sam';
 export const DEFAULT_VALS = {
 	minBaseQuality: 20,
 	minBaseQualityDefault: 20,
@@ -190,10 +190,11 @@ export const CLEAR_LOG = () => {
 	textArea.value = "";
 }
 
-export const LOG = (output) => {
+export const LOG = (output, extraFormat = true) => {
 	const textArea = document.getElementById(OUTPUT_ID);
 	const date = new Date();
-	textArea.value += `${getTimeWithMilliseconds(date)}: ` + output + "\n";
+	textArea.value += (extraFormat ? `${getTimeWithMilliseconds(date)}: ` : '') + output + (extraFormat ? '\n' : '');
+	textArea.scrollTop = textArea.scrollHeight;
 }
 
 export const getTimeWithMilliseconds = date => {
