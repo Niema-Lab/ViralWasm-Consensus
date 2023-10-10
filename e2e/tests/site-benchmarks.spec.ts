@@ -38,7 +38,7 @@ const runBenchmark = async (page, browserName: string, alignmentFiles: string[],
 
 	await downloadFile(page, 'Download Consensus FASTA', BENCHMARK_DIR + downloadedLocation + browserName + '/');
 	fs.mkdirSync(BENCHMARK_DIR + downloadedLocation + browserName, { recursive: true });
-	fs.writeFileSync(BENCHMARK_DIR + downloadedLocation + browserName + '/viralmsa_time.log', viralConsensusTimeElapsed);
+	fs.writeFileSync(BENCHMARK_DIR + downloadedLocation + browserName + '/viralconsensus_time.log', viralConsensusTimeElapsed);
 	fs.writeFileSync(BENCHMARK_DIR + downloadedLocation + browserName + '/minimap2_time.log', minimap2TimeElapsed);
 	fs.writeFileSync(BENCHMARK_DIR + downloadedLocation + browserName + '/time.log', timeElapsed);
 	fs.writeFileSync(BENCHMARK_DIR + downloadedLocation + browserName + '/memory.log', '' + peakMemory);
