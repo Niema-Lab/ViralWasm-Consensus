@@ -3,7 +3,6 @@
 import React, { Component } from 'react'
 import Pako from 'pako';
 import { marked } from 'marked';
-import Aioli from "@biowasm/aioli/dist/aioli";
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -86,7 +85,7 @@ export class App extends Component {
 
 	async componentDidMount() {
 		this.setState({
-			CLI: await new Aioli([{
+			CLI: await new window.Aioli([{
 				tool: "ViralConsensus",
 				program: "viral_consensus",
 				version: VIRAL_CONSENSUS_VERSION,
@@ -101,6 +100,8 @@ export class App extends Component {
 				urlPrefix: `${window.location.origin}${import.meta.env.BASE_URL || ''}tools/fastp`,
 			}, "coreutils/du/8.32"], {
 				printInterleaved: false,
+				printStream: true,
+				callback: (msg) => LOG((msg.stderr ?? msg.stdout) + '\n', false),
 			})
 		}, async () => {
 			CLEAR_LOG()
@@ -504,9 +505,9 @@ export class App extends Component {
 				LOG('\n', false);
 				LOG('Aligning sequences...')
 				LOG('Running command: ' + minimap2Command + '\n')
+				await CLI.exec(minimap2Command);
 
 				const minimap2StartTime = performance.now();
-				LOG((await CLI.exec(minimap2Command)).stderr, false);
 				LOG('\n', false);
 				LOG(`Minimap2 finished in ${((performance.now() - minimap2StartTime) / 1000).toFixed(3)} seconds`)
 
@@ -550,7 +551,6 @@ export class App extends Component {
 
 		// Error handling
 		if (commandError.stderr !== '') {
-			console.log(commandError)
 			LOG("Error: " + commandError.stderr);
 			this.setState({ loading: false })
 			return;
@@ -600,7 +600,7 @@ export class App extends Component {
 
 		LOG('\n', false)
 		LOG("Running command: " + fastpCommand);
-		LOG((await CLI.exec(fastpCommand)).stderr);
+		await CLI.exec(fastpCommand);
 		// TODO: Is there a better way to append data w/o an additional read + append? 
 		return await CLI.fs.readFile(TEMP_FASTP_OUTPUT);
 	}
@@ -678,7 +678,6 @@ export class App extends Component {
 		try {
 			const result = await performance.measureUserAgentSpecificMemory();
 			this.setState(prevState => ({ peakMemory: Math.max(result.bytes, prevState.peakMemory) }))
-			console.log(result.bytes)
 			return result.bytes;
 		} catch (error) {
 			console.log(error);

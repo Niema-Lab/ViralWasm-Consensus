@@ -12,7 +12,6 @@
     "host-dev": "http-server dist/ -p 8000 -c-1"
   },
   "dependencies": {
-    "@biowasm/aioli": "^3.1.0",
     "bootstrap": "^5.3.1",
     "bootstrap-icons": "^1.10.5",
     "marked": "^9.0.0",
