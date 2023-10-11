@@ -3,7 +3,7 @@ import fs from 'fs';
 
 import { downloadFile, BENCHMARK_DIR } from './constants';
 
-const BENCHMARK_TESTS = ['1000', '10000', '100000', '1000000'];
+const BENCHMARK_TESTS = ['1000', '10000', '20000', '100000', '200000'];
 const TEST_COUNT = 5;
 
 for (let i = 1; i <= TEST_COUNT; i++) {
@@ -20,14 +20,16 @@ const runBenchmark = async (page, browserName: string, alignmentFiles: string[],
 	await expect(page.getByTestId('output-text')).toHaveValue(/ViralWasm-Consensus loaded./, { timeout: 15000 });
 	await page.getByTestId('alignment-files').setInputFiles(alignmentFiles);
 	await page.getByTestId('reference-file').setInputFiles(referenceFile);
+	await page.getByTestId('trim-input-fastq').check();
+	await page.getByTestId('trim-front-1').fill('5');
+	await page.getByTestId('trim-tail-1').fill('5');
 	await page.getByTestId('run').click();
 
 	await expect(page.getByTestId('output-text')).toHaveValue(/Done! Time Elapsed:/, { timeout: runTimeout });
 
-	const viralConsensusTimeOutputLine = (await page.getByTestId('output-text').inputValue()).split('\n').filter(line => line.includes('ViralConsensus finished'))[0];
-	const viralConsensusTimeElapsed = viralConsensusTimeOutputLine?.split(' ')?.slice(2)?.join('')?.replace(/[^0-9\.]/g, '') ?? '-1';
-	const minimap2TimeOutputLine = (await page.getByTestId('output-text').inputValue()).split('\n').filter(line => line.includes('Minimap2 finished'))[0];
-	const minimap2TimeElapsed = minimap2TimeOutputLine?.split(' ')?.slice(2)?.join('')?.replace(/[^0-9\.]/g, '') ?? '-1';
+	const fastpTimeElapsed = await getTimeElapsed(page, 'Fastp finished');
+	const viralConsensusTimeElapsed = await getTimeElapsed(page, 'ViralConsensus finished');
+	const minimap2TimeElapsed = await getTimeElapsed(page, 'Minimap2 finished');
 
 	const timeElapsed = (await page.getByTestId('duration-text').textContent()).replace(/[^0-9\.]/g, '');
 	await expect(parseFloat(timeElapsed)).toBeGreaterThan(0);
@@ -37,7 +39,9 @@ const runBenchmark = async (page, browserName: string, alignmentFiles: string[],
 	let peakMemory = parseFloat(memoryLine?.split(' ')?.slice(2)?.join('')?.replace(/[^0-9\.]/g, '') ?? '-1') * 1000;
 
 	await downloadFile(page, 'Download Consensus FASTA', BENCHMARK_DIR + downloadedLocation + browserName + '/');
+	await downloadFile(page, 'Download Trimmed Sequences', BENCHMARK_DIR + downloadedLocation + browserName + '/');
 	fs.mkdirSync(BENCHMARK_DIR + downloadedLocation + browserName, { recursive: true });
+	fs.writeFileSync(BENCHMARK_DIR + downloadedLocation + browserName + '/fastp_time.log', fastpTimeElapsed);
 	fs.writeFileSync(BENCHMARK_DIR + downloadedLocation + browserName + '/viralconsensus_time.log', viralConsensusTimeElapsed);
 	fs.writeFileSync(BENCHMARK_DIR + downloadedLocation + browserName + '/minimap2_time.log', minimap2TimeElapsed);
 	fs.writeFileSync(BENCHMARK_DIR + downloadedLocation + browserName + '/time.log', timeElapsed);
@@ -46,4 +50,9 @@ const runBenchmark = async (page, browserName: string, alignmentFiles: string[],
 	console.log(downloadedLocation);
 	console.log('Time elapsed: ' + timeElapsed);
 	console.log('Peak memory: ' + peakMemory);
+}
+
+const getTimeElapsed = async (page, filter: string) => {
+	const outputLine = (await page.getByTestId('output-text').inputValue()).split('\n').filter(line => line.includes(filter))[0];
+	return outputLine?.split(' ')?.slice(2)?.join('')?.replace(/[^0-9\.]/g, '') ?? '-1';
 }

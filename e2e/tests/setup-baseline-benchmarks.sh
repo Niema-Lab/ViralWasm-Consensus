@@ -1,7 +1,12 @@
-# TODO: cache minimap2 / ViralConsensus binaries? Don't even need to make?
+# Install fastp
+cd ~
+wget http://opengene.org/fastp/fastp.0.23.4
+chmod a+x fastp.0.23.4
+sudo mv fastp.0.23.4 /usr/local/bin/fastp
+
 # Install minimap2 
 cd ~
-git clone https://github.com/lh3/minimap2
+git clone https://github.com/lh3/minimap2 --branch v2.22
 cd minimap2 && make
 sudo mv minimap2 /usr/local/bin/
 
@@ -9,7 +14,7 @@ minimap2 --version
 
 # Install seqtk
 cd ~
-git clone https://github.com/lh3/seqtk.git
+git clone https://github.com/lh3/seqtk.git --branch v1.4
 cd seqtk
 make
 sudo cp seqtk /usr/local/bin/
@@ -37,4 +42,3 @@ sudo mv viral_consensus /usr/local/bin/
 
 # Confirm ViralConsensus is installed
 viral_consensus --version
-
