@@ -4,17 +4,17 @@ import fs from 'fs';
 import { downloadFile, BENCHMARK_DIR, BENCHMARK_OUTPUT_DIR } from './constants';
 
 const BENCHMARK_TESTS = ['10000', '20000', '40000', '100000', '200000', '400000'];
-const TEST_COUNT = 1;
+const TEST_COUNT = 5;
 
 for (let i = 1; i <= TEST_COUNT; i++) {
 	for (const sequenceSize of BENCHMARK_TESTS) {
 		test('run benchmark - ' + sequenceSize + ', run ' + i, async ({ page, browserName }) => {
-			await runBenchmark(page, browserName, ['./e2e/data/reads_' + sequenceSize + '.fastq.gz'], './e2e/data/NC_045512.fas', sequenceSize + '.' + i + '/', 240000);
+			await runBenchmark(page, browserName, ['./e2e/data/reads.' + sequenceSize + '.' + i + '.fastq.gz'], './e2e/data/NC_045512.fas', sequenceSize + '.' + i + '/', sequenceSize, i, 240000);
 		});
 	}
 }
 
-const runBenchmark = async (page, browserName: string, alignmentFiles: string[], referenceFile: string, downloadedLocation: string, runTimeout: number) => {
+const runBenchmark = async (page, browserName: string, alignmentFiles: string[], referenceFile: string, downloadedLocation: string, sequenceSize: string, run: number, runTimeout: number) => {
 	test.setTimeout(runTimeout + 60000);
 	await page.goto('/');
 	await expect(page.getByTestId('output-text')).toHaveValue(/ViralWasm-Consensus loaded./, { timeout: 15000 });
@@ -38,8 +38,8 @@ const runBenchmark = async (page, browserName: string, alignmentFiles: string[],
 	const memoryLine = (await page.getByTestId('output-text').inputValue()).split('\n').filter(line => line.includes('Estimated Peak Memory'))[0];
 	let peakMemory = parseFloat(memoryLine?.split(' ')?.slice(2)?.join('')?.replace(/[^0-9\.]/g, '') ?? '-1') * 1000;
 
-	await downloadFile(page, 'Download Consensus FASTA', BENCHMARK_DIR + downloadedLocation + browserName + '/');
-	await downloadFile(page, 'Download Trimmed Sequences', BENCHMARK_OUTPUT_DIR + downloadedLocation + browserName + '/');
+	await downloadFile(page, 'Download Consensus FASTA', BENCHMARK_DIR + downloadedLocation + browserName + '/', 'consensus.' + sequenceSize + '.' + run + '.fa');
+	await downloadFile(page, 'Download Trimmed Sequences', BENCHMARK_OUTPUT_DIR + downloadedLocation + browserName + '/', 'reads.' + sequenceSize + '.' + run + '.fastp.fastq.gz');
 	fs.mkdirSync(BENCHMARK_DIR + downloadedLocation + browserName, { recursive: true });
 	fs.writeFileSync(BENCHMARK_DIR + downloadedLocation + browserName + '/fastp_time.log', fastpTimeElapsed);
 	fs.writeFileSync(BENCHMARK_DIR + downloadedLocation + browserName + '/viralconsensus_time.log', viralConsensusTimeElapsed);

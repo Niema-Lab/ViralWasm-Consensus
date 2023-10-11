@@ -1,3 +1,4 @@
+TEST_COUNT=5
 SCRIPTPATH=$(dirname "$PWD")
 
 # Download reads.fastq.gz file (1 milion sequences)
@@ -8,5 +9,8 @@ curl -LO https://github.com/niemasd/ViralConsensus-Paper/raw/main/data/time_memo
 curl -LO https://github.com/Niema-Lab/ViralWasm-Consensus/raw/master/public/data/ref_genomes/NC_045512/NC_045512.fas
 
 for n in 10000 20000 40000 100000 200000 400000; do
-	seqtk sample -s100 reads.fastq.gz $n | gzip > reads_$n.fastq.gz
+	for r in $(seq 1 $TEST_COUNT); do
+		seed=$(($r * 100))
+		seqtk sample -s$seed reads.fastq.gz $n | gzip >reads.$n.$r.fastq.gz
+	done
 done
