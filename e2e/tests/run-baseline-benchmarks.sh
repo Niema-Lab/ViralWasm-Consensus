@@ -1,4 +1,4 @@
-TEST_COUNT=5
+TEST_COUNT=1
 
 cd ../data
 
@@ -44,7 +44,7 @@ run_benchmark() {
 }
 
 for r in $(seq 1 $TEST_COUNT); do
-	for i in 1000 10000 20000 100000 200000; do
+	for i in 10000 20000 40000 100000 200000 400000; do
 		run_benchmark $i "$i.$r"
 	done
 done

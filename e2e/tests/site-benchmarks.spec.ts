@@ -3,8 +3,8 @@ import fs from 'fs';
 
 import { downloadFile, BENCHMARK_DIR, BENCHMARK_OUTPUT_DIR } from './constants';
 
-const BENCHMARK_TESTS = ['1000', '10000', '20000', '100000', '200000'];
-const TEST_COUNT = 5;
+const BENCHMARK_TESTS = ['10000', '20000', '40000', '100000', '200000', '400000'];
+const TEST_COUNT = 1;
 
 for (let i = 1; i <= TEST_COUNT; i++) {
 	for (const sequenceSize of BENCHMARK_TESTS) {

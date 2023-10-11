@@ -1,11 +1,11 @@
-TEST_COUNT=5
+TEST_COUNT=1
 
 cd ../../benchmarks
 
 rm summary.log
 
 for p in chromium cli; do
-	for n in 1000 10000 20000 100000 200000; do
+	for n in 10000 20000 40000 100000 200000 400000; do
 		average_memory=0
 		average_time=0
 		for r in $(seq 1 $TEST_COUNT); do
