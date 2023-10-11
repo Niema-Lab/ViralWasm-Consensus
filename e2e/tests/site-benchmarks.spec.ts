@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 
-import { downloadFile, BENCHMARK_DIR } from './constants';
+import { downloadFile, BENCHMARK_DIR, BENCHMARK_OUTPUT_DIR } from './constants';
 
 const BENCHMARK_TESTS = ['1000', '10000', '20000', '100000', '200000'];
 const TEST_COUNT = 5;
@@ -39,7 +39,7 @@ const runBenchmark = async (page, browserName: string, alignmentFiles: string[],
 	let peakMemory = parseFloat(memoryLine?.split(' ')?.slice(2)?.join('')?.replace(/[^0-9\.]/g, '') ?? '-1') * 1000;
 
 	await downloadFile(page, 'Download Consensus FASTA', BENCHMARK_DIR + downloadedLocation + browserName + '/');
-	await downloadFile(page, 'Download Trimmed Sequences', BENCHMARK_DIR + downloadedLocation + browserName + '/');
+	await downloadFile(page, 'Download Trimmed Sequences', BENCHMARK_OUTPUT_DIR + downloadedLocation + browserName + '/');
 	fs.mkdirSync(BENCHMARK_DIR + downloadedLocation + browserName, { recursive: true });
 	fs.writeFileSync(BENCHMARK_DIR + downloadedLocation + browserName + '/fastp_time.log', fastpTimeElapsed);
 	fs.writeFileSync(BENCHMARK_DIR + downloadedLocation + browserName + '/viralconsensus_time.log', viralConsensusTimeElapsed);
