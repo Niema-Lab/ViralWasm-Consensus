@@ -1,8 +1,8 @@
 # Install fastp
 cd ~
-wget http://opengene.org/fastp/fastp.0.23.4
-chmod a+x fastp.0.23.4
-sudo mv fastp.0.23.4 /usr/local/bin/fastp
+wget http://opengene.org/fastp/fastp.0.20.1
+chmod a+x fastp.0.20.1
+sudo mv fastp.0.20.1 /usr/local/bin/fastp
 
 # Install minimap2 
 cd ~
