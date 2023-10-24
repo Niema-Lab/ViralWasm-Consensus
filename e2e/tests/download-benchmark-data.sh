@@ -15,10 +15,5 @@ for n in 10000 20000 40000 100000 200000 400000; do
 	done
 done
 
-for r in $(seq 1 $TEST_COUNT); do
-	seed=$(($r * 100))
-	seqtk sample -s$seed reads.fastq.gz 500000 >reads.500000.$r.1.fastq
-	seqtk subseq reads.fastq.gz reads.500000.$r.1.fastq >reads.500000.$r.2.fastq
-	gzip reads.500000.$r.1.fastq
-	gzip reads.500000.$r.2.fastq
-done
+zcat reads.fastq.gz | awk 'NR<=2000000' | gzip > reads.500000.1.fastq.gz
+zcat reads.fastq.gz | awk 'NR>2000000 && NR<=4000000' | gzip > reads.500000.2.fastq.gz
