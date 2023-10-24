@@ -14,7 +14,7 @@ for (let i = 1; i <= TEST_COUNT; i++) {
 	}
 }
 test('run benchmark - ' + 1000000 + ', run ' + 1, async ({ page, browserName }) => {
-	await runBenchmark(page, browserName, ['./e2e/data/reads.' + 500000 + + '.1.fastq.gz', './e2e/data/reads.' + 500000 + '.2.fastq.gz'], './e2e/data/NC_045512.fas', 1000000 + '.' + 1 + '/', '1000000', 1, 300000);
+	await runBenchmark(page, browserName, ['./e2e/data/reads.' + 500000 + '.1.fastq.gz', './e2e/data/reads.' + 500000 + '.2.fastq.gz'], './e2e/data/NC_045512.fas', 1000000 + '.' + 1 + '/', '1000000', 1, 300000);
 });
 
 const runBenchmark = async (page, browserName: string, alignmentFiles: string[], referenceFile: string, downloadedLocation: string, sequenceSize: string, run: number, runTimeout: number) => {
