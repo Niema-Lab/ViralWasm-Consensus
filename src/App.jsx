@@ -486,6 +486,7 @@ export class App extends Component {
 				const sequencesFile = this.state.trimInput ? FASTP_OUTPUT_FILE_NAME : COMBINED_SEQUENCES_FILE_NAME;
 
 				// Add additional alignment files (fastq files)
+				let totalFastp = 0;
 				for (let i = 0; i < this.state.alignmentFiles.length; i++) {
 					const alignmentFile = this.state.alignmentFiles[i];
 					let alignmentFileData = await this.fileReaderReadFile(alignmentFile, true);
@@ -496,9 +497,18 @@ export class App extends Component {
 						this.log("Alignment file " + alignmentFile.name + " is already gzipped, skipping gzip...")
 					}
 					if (this.state.trimInput) {
+						const fastpStartTime = performance.now();
 						alignmentFileData = await this.trimInput(alignmentFileData)
+						const time = (performance.now() - fastpStartTime);
+						this.log('\n', false)
+						this.log(`${alignmentFile.name} trimming finished in ${(time / 1000).toFixed(3)} seconds\n`)
+						totalFastp += time;
 					}
 					await CLI.fs.writeFile(sequencesFile, new Uint8Array(alignmentFileData), { flags: 'a' });
+					alignmentFileData = undefined;
+				}
+				if (this.state.trimInput) {
+					this.log(`Fastp finished in ${(totalFastp / 1000).toFixed(3)} seconds`)
 				}
 				await this.deleteFile(TEMP_FASTP_INPUT);
 				await this.deleteFile(TEMP_FASTP_OUTPUT);
@@ -604,9 +614,7 @@ export class App extends Component {
 
 		this.log('\n', false)
 		this.log("Running command: " + fastpCommand);
-		const fastpStartTime = performance.now();
 		await CLI.exec(fastpCommand);
-		this.log(`Fastp finished in ${((performance.now() - fastpStartTime) / 1000).toFixed(3)} seconds`)
 		// TODO: Is there a better way to append data w/o an additional read + append? 
 		return await CLI.fs.readFile(TEMP_FASTP_OUTPUT);
 	}
