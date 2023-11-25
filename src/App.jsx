@@ -1,4 +1,3 @@
-// TODO: mem leak is not fixed with reinit, determine if minimap2 or viral_consensus or something else
 // TODO: PWA? 
 import React, { Component } from 'react'
 import Pako from 'pako';
@@ -39,6 +38,7 @@ import {
 	POSITION_COUNTS_FILE_NAME,
 	CONSENSUS_FILE_NAME,
 	DEFAULT_INPUT_STATE,
+	ERROR_MSG
 } from './constants'
 
 import './App.scss'
@@ -74,6 +74,7 @@ export class App extends Component {
 			// ------- Biowasm & output states -------
 			CLI: undefined,
 			done: false,
+			errorMessage: undefined,
 			timeElapsed: undefined,
 			consensusExists: false,
 			posCountsExists: false,
@@ -422,31 +423,50 @@ export class App extends Component {
 		return valid;
 	}
 
-	runViralConsensus = async () => {
+	runViralWasmConsensus = async () => {
+		if (this.state.loading) {
+			alert('Current job is running. To run a new job, please wait for the current job to finish or refresh the page.');
+			return;
+		}
+
 		if (!this.validInput()) {
 			alert("Invalid input. Please check your input and try again.")
 			this.log("Invalid input. Please check your input and try again.")
 			return;
 		}
 
+		if (this.state.CLI === undefined) {
+			setTimeout(this.runViralWasmConsensus, 1000)
+		} else {
+			window.scrollTo({
+				top: window.innerHeight / 4,
+				left: 0,
+				behavior: 'instant'
+			});
+
+			// Delete old files
+			this.log("Deleting old files...")
+			await this.clearFiles();
+
+			const startTime = performance.now();
+			try {
+				await this.runViralConsensus();
+			} catch (e) {
+				this.log('\n', false);
+				this.log(ERROR_MSG(e.message));
+				this.setState({ errorMessage: ERROR_MSG(e.message) })
+			}
+			this.setState({ loading: false, done: true, timeElapsed: ((performance.now() - startTime) / 1000).toFixed(3) })
+			this.log(`Done! Time Elapsed: ${((performance.now() - startTime) / 1000).toFixed(3)} seconds`);
+			this.log(`Estimated Peak Memory: ${(await this.getMemory() / 1000000).toFixed(3)} MB`);
+		}
+	}
+
+	runViralConsensus = async () => {
 		const CLI = this.state.CLI;
 
-		if (CLI === undefined) {
-			setTimeout(() => {
-				this.runViralConsensus();
-			}, 2000)
-			return;
-		}
-
-		window.scrollTo({
-			top: window.innerHeight / 4,
-			left: 0,
-			behavior: 'instant'
-		});
-
-		const startTime = performance.now();
 		this.log("Starting job...")
-		this.setState({ done: false, timeElapsed: undefined, loading: true, inputChanged: false, consensusExists: false, posCountsExists: false, insCountsExists: false, fastpOutputExists: false, minimap2OutputExists: false })
+		this.setState({ errorMessage: undefined, done: false, timeElapsed: undefined, loading: true, inputChanged: false, consensusExists: false, posCountsExists: false, insCountsExists: false, fastpOutputExists: false, minimap2OutputExists: false })
 
 		const refFileName = DEFAULT_REF_FILE_NAME;
 		const alignmentFileName = (this.state.alignmentFiles[0]?.name?.endsWith('.bam') || this.state.alignmentFiles === 'EXAMPLE_DATA') ?
@@ -454,10 +474,6 @@ export class App extends Component {
 		const primerFileName = DEFAULT_PRIMER_FILE_NAME;
 
 		let command = `viral_consensus -i ${this.state.alignmentFilesAreFASTQ ? MINIMAP2_OUTPUT_FILE_NAME : alignmentFileName} -r ${refFileName} -o ${CONSENSUS_FILE_NAME}`;
-
-		// Delete old files
-		this.log("Deleting old files...")
-		await this.clearFiles();
 
 		this.log("Reading reference file...")
 		// Create example reference fasta file
@@ -521,13 +537,19 @@ export class App extends Component {
 				this.log('Running command: ' + minimap2Command + '\n')
 				const minimap2StartTime = performance.now();
 				await CLI.exec(minimap2Command);
+				const properRun = (new RegExp(/mapped \d+ sequences/gm)).test(document.getElementById("output-text").value) &&
+					!(new RegExp(/failed to parse the FASTA\/FASTQ/gm)).test(document.getElementById("output-text").value);
+				const validOutFile = (await CLI.fs.stat(MINIMAP2_OUTPUT_FILE_NAME)).size > 0;
+				if (!properRun || !validOutFile) {
+					throw new Error('minimap2');
+				}
 
 				this.log('\n', false);
 				this.log(`Minimap2 finished in ${((performance.now() - minimap2StartTime) / 1000).toFixed(3)} seconds`)
 
 			} else {
 				// Handle other file types, assuming bam/sam, but giving a warning
-				this.log("WARNING: Alignment file extension not recognized. Assuming bam/sam format.")
+				this.log("WARNING: Alignment file type not recognized. Assuming bam/sam format.")
 				await CLI.fs.writeFile(alignmentFileName, new Uint8Array(alignmentFileData));
 			}
 		}
@@ -556,35 +578,30 @@ export class App extends Component {
 			command += ' -oi ' + INSERTION_COUNTS_FILE_NAME;
 		}
 
-		// Generate consensus genome (run viral_consensus)
+		// Generate consensus genome (run ViralConsensus)
 		this.log('\n', false);
 		this.log("Running command: " + command + "\n")
 		const viralConsensusStartTime = performance.now();
 		const commandError = await CLI.exec(command);
-		this.log(`ViralConsensus finished in ${((performance.now() - viralConsensusStartTime) / 1000).toFixed(3)} seconds`)
 
 		// Error handling
 		if (commandError.stderr !== '') {
-			this.log("Error: " + commandError.stderr);
-			this.setState({ loading: false })
-			return;
+			throw new Error('ViralConsensus');
 		}
 		const consensusFile = await CLI.ls(CONSENSUS_FILE_NAME);
 		if (!consensusFile || consensusFile.size === 0) {
 			this.log("Error: No consensus genome generated. Please check your input files.")
-			this.setState({ loading: false })
-			return;
+			throw new Error('ViralConsensus');
 		}
 
+		this.log(`ViralConsensus finished in ${((performance.now() - viralConsensusStartTime) / 1000).toFixed(3)} seconds`)
+
 		// Check if output files exist
-		const consensusExists = !!consensusFile;
-		const posCountsExists = !!(await CLI.ls(POSITION_COUNTS_FILE_NAME));
-		const insCountsExists = !!(await CLI.ls(INSERTION_COUNTS_FILE_NAME));
-		const fastpOutputExists = !!(await CLI.ls(FASTP_OUTPUT_FILE_NAME));
-		const minimap2OutputExists = !!(await CLI.ls(MINIMAP2_OUTPUT_FILE_NAME));
-		this.setState({ done: true, timeElapsed: ((performance.now() - startTime) / 1000).toFixed(3), consensusExists, posCountsExists, insCountsExists, fastpOutputExists, minimap2OutputExists, loading: false })
-		this.log(`Done! Time Elapsed: ${((performance.now() - startTime) / 1000).toFixed(3)} seconds`);
-		this.log(`Estimated Peak Memory: ${(await this.getMemory() / 1000000).toFixed(3)} MB`);
+		const posCountsExists = (await CLI.ls(POSITION_COUNTS_FILE_NAME))?.size > 0;
+		const insCountsExists = (await CLI.ls(INSERTION_COUNTS_FILE_NAME))?.size > 0;
+		const fastpOutputExists = (await CLI.ls(FASTP_OUTPUT_FILE_NAME))?.size > 0;
+		const minimap2OutputExists = (await CLI.ls(MINIMAP2_OUTPUT_FILE_NAME))?.size > 0;
+		this.setState({ consensusExists: true, posCountsExists, insCountsExists, fastpOutputExists, minimap2OutputExists })
 	}
 
 	trimInput = async (alignmentFileData) => {
@@ -724,7 +741,7 @@ export class App extends Component {
 						<div id="input-content">
 							<div className="d-flex flex-column mb-4">
 								<label htmlFor="alignment-files" className="form-label">Select Input Reads File(s) (BAM, SAM, FASTQ(s))<span className="text-danger"> *</span></label>
-								<input className={`form-control ${!this.state.alignmentFilesValid && 'is-invalid'}`} type="file" multiple accept=".sam,.bam,.fastq,.fastq.gz,.fq,.fq.gz" id="alignment-files" data-testid="alignment-files" onChange={this.selectAlignmentFiles} />
+								<input className={`form-control ${!this.state.alignmentFilesValid && 'is-invalid'}`} type="file" multiple accept=".sam,.bam,.fastq,.fastq.gz,.fq,.fq.gz,.fas.gz,.fas,.fa,.fa.gz,.fasta,.fasta.gz" id="alignment-files" data-testid="alignment-files" onChange={this.selectAlignmentFiles} />
 								{this.state.alignmentFiles === 'EXAMPLE_DATA' &&
 									<p className="mt-2 mb-0"><strong>Using Loaded Example file: <a
 										href={`${import.meta.env.BASE_URL || ''}${EXAMPLE_ALIGNMENT_FILE}`}
@@ -870,7 +887,7 @@ export class App extends Component {
 							Load Example Data {(this.state.alignmentFiles === 'EXAMPLE_DATA') && <strong>(Currently Using Example Files!)</strong>}
 						</button>
 
-						<button type="button" className="btn btn-primary w-100 mt-3" onClick={this.runViralConsensus} data-testid='run'>Run ViralWasm-Consensus</button>
+						<button type="button" className="btn btn-primary w-100 mt-3" onClick={this.runViralWasmConsensus} data-testid='run'>Run ViralWasm-Consensus</button>
 					</div>
 
 					<div id="output" className={`form-group ms-4 me-5 ${this.state.expandedContainer === 'output' && 'full-width-container'} ${this.state.expandedContainer === 'input' && 'd-none'}`}>
@@ -888,6 +905,7 @@ export class App extends Component {
 							</label>
 						</div>
 						{this.state.loading && <img id="loading" className="mt-3" src={loading} />}
+						{this.state.errorMessage && <div className="text-danger text-center mt-3">{this.state.errorMessage}</div>}
 						{(this.state.done && (this.state.consensusExists || this.state.posCountsExists || this.state.insCountsExists) &&
 							<p className="mt-4 mb-2">ViralConsensus Output Files: </p>)}
 						<div className="download-buttons">
@@ -913,7 +931,7 @@ export class App extends Component {
 								</Fragment>
 							}
 						</div>
-						{this.state.done && this.state.inputChanged && <p className="text-danger text-center mt-4">Warning: Form input has changed since last run, run again to download latest output files.</p>}
+						{this.state.done && this.state.inputChanged && <p className="text-warning text-center">Warning: Form input has changed since last run, run again to download latest output files.</p>}
 					</div>
 				</div>
 				<footer className="d-flex w-100 justify-content-center">Source code:&nbsp;<a href="https://github.com/niema-lab/ViralWasm-Consensus/" target="_blank" rel="noreferrer">github.com/niema-lab/ViralWasm-Consensus</a>.<br /></footer>
