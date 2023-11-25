@@ -14,3 +14,6 @@ for n in 10000 20000 40000 100000 200000 400000; do
 		seqtk sample -s$seed reads.fastq.gz $n | gzip >reads.$n.$r.fastq.gz
 	done
 done
+
+zcat reads.fastq.gz | awk 'NR<=2000000' | gzip > reads.500000.1.fastq.gz
+zcat reads.fastq.gz | awk 'NR>2000000 && NR<=4000000' | gzip > reads.500000.2.fastq.gz

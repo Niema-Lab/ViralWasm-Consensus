@@ -7,69 +7,69 @@ export const REF_GENOMES_DIR = "data/ref_genomes/";
 export const REF_GENOME_REPO_STRUCTURE_LINK = "/data/repo_structure.json";
 // reference genomes for common viruses
 export const REFS = {
-    'bombalivirus':    'NC_039345', // Bombali Virus (Bombali ebolavirus)
-    'bundibugyovirus': 'NC_014373', // Bundibugyo Virus (Bundibugyo ebolavirus)
-    'denv1':           'NC_001477', // Dengue Virus 1
-    'denv2':           'NC_001474', // Dengue Virus 2
-    'denv3':           'NC_001475', // Dengue Virus 3
-    'denv4':           'NC_002640', // Dengue Virus 4
-    'ebolavirus':      'NC_002549', // Ebola Virus (Zaire ebolavirus)
-    'hcv1':            'NC_004102', // HCV genotype 1
-    'hcv1h77':         'NC_038882', // HCV genotpye 1 (isolate H77)
-    'hcv2':            'NC_009823', // HCV genotype 2
-    'hcv3':            'NC_009824', // HCV genotype 3
-    'hcv4':            'NC_009825', // HCV genotype 4
-    'hcv5':            'NC_009826', // HCV genotype 5
-    'hcv6':            'NC_009827', // HCV genotype 6
-    'hcv7':            'NC_030791', // HCV genotype 7
-    'hiv1':            'NC_001802', // HIV-1
-    'hiv2':            'NC_001722', // HIV-2
-    'monkeypox':       'NC_063383', // Monkeypox Virus
-    'restonvirus':     'NC_004161', // Reston Virus (Reston ebolavirus)
-    'sarscov2':        'NC_045512', // SARS-CoV-2 (COVID-19)
-    'sudanvirus':      'NC_006432', // Sudan Virus (Sudan ebolavirus)
-    'taiforestvirus':  'NC_014372', // Tai Forest Virus (Tai Forest ebolavirus, Cote d'Ivoire ebolavirus)
+	'bombalivirus': 'NC_039345', // Bombali Virus (Bombali ebolavirus)
+	'bundibugyovirus': 'NC_014373', // Bundibugyo Virus (Bundibugyo ebolavirus)
+	'denv1': 'NC_001477', // Dengue Virus 1
+	'denv2': 'NC_001474', // Dengue Virus 2
+	'denv3': 'NC_001475', // Dengue Virus 3
+	'denv4': 'NC_002640', // Dengue Virus 4
+	'ebolavirus': 'NC_002549', // Ebola Virus (Zaire ebolavirus)
+	'hcv1': 'NC_004102', // HCV genotype 1
+	'hcv1h77': 'NC_038882', // HCV genotpye 1 (isolate H77)
+	'hcv2': 'NC_009823', // HCV genotype 2
+	'hcv3': 'NC_009824', // HCV genotype 3
+	'hcv4': 'NC_009825', // HCV genotype 4
+	'hcv5': 'NC_009826', // HCV genotype 5
+	'hcv6': 'NC_009827', // HCV genotype 6
+	'hcv7': 'NC_030791', // HCV genotype 7
+	'hiv1': 'NC_001802', // HIV-1
+	'hiv2': 'NC_001722', // HIV-2
+	'monkeypox': 'NC_063383', // Monkeypox Virus
+	'restonvirus': 'NC_004161', // Reston Virus (Reston ebolavirus)
+	'sarscov2': 'NC_045512', // SARS-CoV-2 (COVID-19)
+	'sudanvirus': 'NC_006432', // Sudan Virus (Sudan ebolavirus)
+	'taiforestvirus': 'NC_014372', // Tai Forest Virus (Tai Forest ebolavirus, Cote d'Ivoire ebolavirus)
 }
 export const REF_NAMES = {
-    'DENV': {
-        'denv1':           'Dengue Virus 1',
-        'denv2':           'Dengue Virus 2',
-        'denv3':           'Dengue Virus 3',
-        'denv4':           'Dengue Virus 4',
-    },
+	'DENV': {
+		'denv1': 'Dengue Virus 1',
+		'denv2': 'Dengue Virus 2',
+		'denv3': 'Dengue Virus 3',
+		'denv4': 'Dengue Virus 4',
+	},
 
-    'Ebola': {
-        'bombalivirus':    'Bombali Virus (Bombali ebolavirus)',
-        'bundibugyovirus': 'Bundibugyo Virus (Bundibugyo ebolavirus)',
-        'ebolavirus':      'Ebola Virus (Zaire ebolavirus)',
-        'restonvirus':     'Reston Virus (Reston ebolavirus)',
-        'sudanvirus':      'Sudan Virus (Sudan ebolavirus)',
-        'taiforestvirus':  'Tai Forest Virus (Tai Forest ebolavirus, Cote d\'Ivoire ebolavirus)',
-    },
+	'Ebola': {
+		'bombalivirus': 'Bombali Virus (Bombali ebolavirus)',
+		'bundibugyovirus': 'Bundibugyo Virus (Bundibugyo ebolavirus)',
+		'ebolavirus': 'Ebola Virus (Zaire ebolavirus)',
+		'restonvirus': 'Reston Virus (Reston ebolavirus)',
+		'sudanvirus': 'Sudan Virus (Sudan ebolavirus)',
+		'taiforestvirus': 'Tai Forest Virus (Tai Forest ebolavirus, Cote d\'Ivoire ebolavirus)',
+	},
 
-    'HCV': {
-        'hcv1':            'HCV genotype 1',
-        'hcv1h77':         'HCV genotpye 1 (isolate H77)',
-        'hcv2':            'HCV genotype 2',
-        'hcv3':            'HCV genotype 3',
-        'hcv4':            'HCV genotype 4',
-        'hcv5':            'HCV genotype 5',
-        'hcv6':            'HCV genotype 6',
-        'hcv7':            'HCV genotype 7',
-    },
-    
-    'HIV': {
-        'hiv1':            'HIV-1',
-        'hiv2':            'HIV-2',
-    },
+	'HCV': {
+		'hcv1': 'HCV genotype 1',
+		'hcv1h77': 'HCV genotpye 1 (isolate H77)',
+		'hcv2': 'HCV genotype 2',
+		'hcv3': 'HCV genotype 3',
+		'hcv4': 'HCV genotype 4',
+		'hcv5': 'HCV genotype 5',
+		'hcv6': 'HCV genotype 6',
+		'hcv7': 'HCV genotype 7',
+	},
 
-    'Monkeypox': {
-        'monkeypox':       'Monkeypox Virus',
-    },
-    
-    'SARS-CoV-2': {
-        'sarscov2':        'SARS-CoV-2 (COVID-19)',
-    }
+	'HIV': {
+		'hiv1': 'HIV-1',
+		'hiv2': 'HIV-2',
+	},
+
+	'Monkeypox': {
+		'monkeypox': 'Monkeypox Virus',
+	},
+
+	'SARS-CoV-2': {
+		'sarscov2': 'SARS-CoV-2 (COVID-19)',
+	}
 }
 
 export const OFFLINE_INSTRUCTIONS = "/README.md";
@@ -162,9 +162,9 @@ export const ARE_FASTQ = (files) => {
 	for (const file of files) {
 		const name = file.name;
 		const extensionIndex = name.indexOf('.') === -1 ? name.length : name.indexOf('.');
-		const extension = name.slice(extensionIndex);
-		
-		if (!(extension.includes('fastq') || extension.includes('fq'))) {
+		const extension = name.slice(extensionIndex).toLowerCase();
+
+		if (!(extension.includes('fa') || extension.includes('fq'))) {
 			return false;
 		}
 	}
@@ -185,12 +185,16 @@ export const INPUT_IS_NONNEG_INTEGER = (input, lowBound = 0, upperBound = Number
 	return (input === '' || (input >= lowBound && input <= upperBound && input == parseInt(input)))
 }
 
+export const ERROR_MSG = (tool) => {
+	return `Error running ${tool} as part of ViralWasm-Consensus pipeline. Please check your input and try again.`;
+}
+
 export const CLEAR_LOG = () => {
 	const textArea = document.getElementById(OUTPUT_ID);
 	textArea.value = "";
 }
 
 export const GET_TIME_WITH_MILLISECONDS = date => {
-	const t = date.toLocaleTimeString();
-	return `${t.substring(0, 7)}.${("00" + date.getMilliseconds()).slice(-3)}`;
+	const t = date.toLocaleTimeString([], { hour12: false });
+	return `${t.substring(0, 8)}.${("00" + date.getMilliseconds()).slice(-3)}`;
 }

@@ -50,3 +50,51 @@ for r in $(seq 1 $TEST_COUNT); do
 		run_benchmark $i $r
 	done
 done
+
+run_benchmark_split() {
+	LOG_DIR=../../benchmarks/1000000.1/cli/
+	OUT_DIR=../../benchmark-run-outputs/1000000.1/cli/
+	mkdir -p $OUT_DIR
+	mkdir -p $LOG_DIR
+
+	total_time_taken=0
+	peak_memory=0
+
+	# $1: tool
+	update_stats() {
+		time_taken=$(grep "User time (seconds): " ${1}_output.log | awk '{print $4}')
+		total_time_taken=$(echo "$time_taken + $total_time_taken" | bc)
+		memory=$(grep "Maximum resident set size (kbytes): " ${1}_output.log | awk '{print $6}')
+		echo $1
+		echo $memory
+		cat ${1}_output.log
+		if [ "$memory" -gt "$peak_memory" ]; then
+			peak_memory=$memory
+		fi
+		echo $time_taken >"$LOG_DIR/${1}_time.log"
+	}
+
+	/usr/bin/time -v fastp -i reads.500000.1.fastq.gz -o $OUT_DIR/reads.500000.1.fastp.fastq.gz --json /dev/null --html /dev/null --compression 9 --trim_front1 5 --trim_tail1 5 2>fastp_1_output.log
+	update_stats fastp_1
+
+	/usr/bin/time -v fastp -i reads.500000.2.fastq.gz -o $OUT_DIR/reads.500000.2.fastp.fastq.gz --json /dev/null --html /dev/null --compression 9 --trim_front1 5 --trim_tail1 5 2>fastp_2_output.log
+	update_stats fastp_2
+
+	cat $OUT_DIR/reads.500000.1.fastp.fastq.gz $OUT_DIR/reads.500000.2.fastp.fastq.gz >$OUT_DIR/reads.1000000.fastp.fastq.gz
+
+	/usr/bin/time -v minimap2 -t 1 -a -o reads.1000000.sam NC_045512.fas $OUT_DIR/reads.1000000.fastp.fastq.gz 2>minimap2_output.log
+	update_stats minimap2
+
+	/usr/bin/time -v viral_consensus -i "../data/reads.1000000.sam" -r NC_045512.fas -o "$LOG_DIR/consensus.fa" -q 20 -d 10 -f 0.5 -a N 2>viralconsensus_output.log
+	update_stats viralconsensus
+
+	echo $total_time_taken >"$LOG_DIR/time.log"
+	echo $peak_memory >"$LOG_DIR/memory.log"
+
+	rm -rf reads.1000000.sam
+	rm -rf fastp_output.log
+	rm -rf minimap2_output.log
+	rm -rf viralconsensus_output.log
+}
+
+run_benchmark_split
