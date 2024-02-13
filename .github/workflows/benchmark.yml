@@ -17,6 +17,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Install site benchmark dependencies
+        run: npm ci
+      - name: Build site for Playwright and get ref genome data
+        env: 
+          VITE_OFFLINE_VERSION: true
+        run: npm run build
       - name: Setup cli benchmark dependencies
         run: |
             cd e2e/tests/
@@ -28,12 +34,6 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18
-      - name: Install site benchmark dependencies
-        run: npm ci
-      - name: Build site for Playwright
-        env: 
-          VITE_OFFLINE_VERSION: true
-        run: npm run build
       - name: Get installed Playwright version
         id: playwright-version
         run: echo "PLAYWRIGHT_VERSION=$(node -e "console.log(require('./package.json').devDependencies['@playwright/test'])")" >> $GITHUB_ENV

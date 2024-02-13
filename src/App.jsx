@@ -13,8 +13,6 @@ import {
 	FASTP_VERSION,
 	OFFLINE_INSTRUCTIONS,
 	OFFLINE_INSTRUCTIONS_KEYWORDS,
-	REFS,
-	REF_NAMES,
 	REF_GENOMES_DIR,
 	REF_GENOME_REPO_STRUCTURE_LINK,
 	CLEAR_LOG,
@@ -113,8 +111,7 @@ export class App extends Component {
 
 		this.preventNumberInputScrolling();
 		this.fetchExampleFiles();
-		this.fetchRefGenomes();
-		this.initRefGenomes();
+		this.initPreloadedRefs();
 		this.fetchOfflineInstructions();
 		this.addOfflineInstructionsListener();
 	}
@@ -135,38 +132,15 @@ export class App extends Component {
 		this.setState({ exampleAlignmentFile: exampleAlignmentFile })
 	}
 
-	fetchRefGenomes = async () => {
-		const res = await fetch(`${window.location.origin}${import.meta.env.BASE_URL || ''}${REF_GENOME_REPO_STRUCTURE_LINK}`);
-		const json = await res.json();
-		const refGenomes = new Set();
-		for (const file of json.tree) {
-			if (file.path.startsWith("ref_genomes/")) {
-				refGenomes.add(file.path.split("/")[1]);
-			}
-		}
-		this.setState({ refGenomes });
-	}
+	initPreloadedRefs = async () => {
+		console.log(`${import.meta.env.BASE_URL || ''}${REF_GENOME_REPO_STRUCTURE_LINK}`)
+		const REFS = await (await fetch(`${import.meta.env.BASE_URL || ''}${REF_GENOME_REPO_STRUCTURE_LINK}`)).json();
+		const preloadRefOptions = Object.entries(REFS).map(arr =>
+			<option value={arr[0]} key={arr[1].name}>{arr[1].name}</option>
+		)
 
-	initRefGenomes = () => {
-		const preloadRefInterval = setInterval(() => {
-			if (this.state.refGenomes?.size > 0) {
-				clearInterval(preloadRefInterval);
-				const preloadRefOptions = [];
-				for (const REF_NAME_MAP of Object.entries(REF_NAMES)) {
-					const REF_NAME_MAP_TYPE = Object.entries(REF_NAME_MAP[1])
-					for (const REF_NAME of REF_NAME_MAP_TYPE) {
-						const virus = REF_NAME[0];
-						const commonName = REF_NAME[1];
-						preloadRefOptions.push(
-							<option value={REFS[virus]} key={commonName}>{commonName}</option>
-						)
-					}
-				}
-
-				preloadRefOptions.sort((a, b) => a.key.localeCompare(b.key));
-				this.setState({ preloadRefOptions })
-			}
-		}, 250)
+		preloadRefOptions.sort((a, b) => a.key.localeCompare(b.key));
+		this.setState({ preloadRefOptions })
 	}
 
 	fetchOfflineInstructions = async () => {
