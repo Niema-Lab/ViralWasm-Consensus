@@ -12,7 +12,8 @@ import {
 	MINIMAP2_VERSION,
 	FASTP_VERSION,
 	OFFLINE_INSTRUCTIONS,
-	OFFLINE_INSTRUCTIONS_KEYWORDS,
+	OFFLINE_INSTRUCTIONS_KEYWORDS_START,
+	OFFLINE_INSTRUCTIONS_KEYWORDS_END,
 	REF_GENOMES_DIR,
 	REF_GENOME_REPO_STRUCTURE_LINK,
 	CLEAR_LOG,
@@ -147,7 +148,8 @@ export class App extends Component {
 		const res = await fetch(`${window.location.origin}${import.meta.env.BASE_URL || ''}${OFFLINE_INSTRUCTIONS}`);
 		const text = await res.text();
 		const html = marked(text);
-		const offlineInstructions = html.slice(html.indexOf(OFFLINE_INSTRUCTIONS_KEYWORDS) + OFFLINE_INSTRUCTIONS_KEYWORDS.length)
+		let offlineInstructions = html.slice(html.indexOf(OFFLINE_INSTRUCTIONS_KEYWORDS_START) + OFFLINE_INSTRUCTIONS_KEYWORDS_START.length)
+		offlineInstructions = offlineInstructions.slice(0, offlineInstructions.indexOf(OFFLINE_INSTRUCTIONS_KEYWORDS_END))
 		this.setState({ offlineInstructions });
 	}
 

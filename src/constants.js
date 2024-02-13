@@ -7,7 +7,8 @@ export const REF_GENOMES_DIR = "data/Reference-Genomes/";
 export const REF_GENOME_REPO_STRUCTURE_LINK = "data/REFS.json";
 
 export const OFFLINE_INSTRUCTIONS = "/README.md";
-export const OFFLINE_INSTRUCTIONS_KEYWORDS = "<h3>ViralWasm-Consensus Offline</h3>\n";
+export const OFFLINE_INSTRUCTIONS_KEYWORDS_START = "<h2>ViralWasm-Consensus Offline</h2>\n";
+export const OFFLINE_INSTRUCTIONS_KEYWORDS_END = "<h2>Citing ViralWasm-Consensus</h2>\n";
 export const BIOWASM_WORKING_DIR = "/shared/data/";
 export const OUTPUT_ID = "output-text";
 export const EXAMPLE_REF = "NC_045512"; // SARS-CoV-2 (COVID-19)
