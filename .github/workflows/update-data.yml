@@ -35,7 +35,7 @@ jobs:
         run: npm run build
       - name: Push updated ref genome data and offline mode to master
         run: |  
-          zip -r viralwasm-consensus-offline.zip dist/ run_website.py
+          zip -9 -r viralwasm-consensus-offline.zip dist/ run_website.py
           git config --global user.name 'GitHub Actions'
           git config --global user.email 'action@github.com'
           git add .
