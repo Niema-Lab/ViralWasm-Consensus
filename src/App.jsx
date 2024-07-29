@@ -2,6 +2,8 @@
 import React, { Component } from 'react'
 import Pako from 'pako';
 import { marked } from 'marked';
+import { TarWriter } from '@gera2ld/tarjs';
+import { BlobWriter, ZipWriter } from "@zip.js/zip.js";
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -19,15 +21,14 @@ import {
 	CLEAR_LOG,
 	OUTPUT_ID,
 	GET_TIME_WITH_MILLISECONDS,
-	EXAMPLE_ALIGNMENT_FILE,
-	DEFAULT_ALIGNMENT_BAM_FILE_NAME,
-	DEFAULT_ALIGNMENT_SAM_FILE_NAME,
+	EXAMPLE_INPUT_FILE,
+	DEFAULT_INPUT_BAM_FILE_NAME,
+	DEFAULT_INPUT_SAM_FILE_NAME,
 	TEMP_FASTP_INPUT,
 	TEMP_FASTP_OUTPUT,
-	COMBINED_SEQUENCES_FILE_NAME,
-	FASTP_OUTPUT_FILE_NAME,
-	MINIMAP2_OUTPUT_FILE_NAME,
+	TRIMMED_SEQUENCES_FILE_NAME,
 	EXAMPLE_REF,
+	BIOWASM_WORKING_DIR,
 	DEFAULT_REF_FILE_NAME,
 	DEFAULT_PRIMER_FILE_NAME,
 	ARE_FASTQ,
@@ -37,7 +38,8 @@ import {
 	POSITION_COUNTS_FILE_NAME,
 	CONSENSUS_FILE_NAME,
 	DEFAULT_INPUT_STATE,
-	ERROR_MSG
+	ERROR_MSG,
+	SEQUENCES_FILE_NAME
 } from './constants'
 
 import './App.scss'
@@ -57,7 +59,7 @@ export class App extends Component {
 
 			refGenomes: undefined,
 
-			exampleAlignmentFile: undefined,
+			exampleInputFile: undefined,
 
 			fastpCompressionLevelDefault: 9,
 			trimFront1Default: 0,
@@ -75,13 +77,15 @@ export class App extends Component {
 			done: false,
 			errorMessage: undefined,
 			timeElapsed: undefined,
-			consensusExists: false,
-			posCountsExists: false,
-			insCountsExists: false,
-			fastpOutputExists: false,
-			minimap2OutputExists: false,
+			consensusFiles: undefined,
+			posCountsFiles: undefined,
+			insCountsFiles: undefined,
+			trimmedOutputFiles: undefined,
+			alignedOutputFiles: undefined,
 			loading: false,
-			inputChanged: false
+			inputChanged: false,
+			compressSingle: false,
+			downloadZip: false,
 		}
 	}
 
@@ -128,13 +132,12 @@ export class App extends Component {
 
 	// Fetch example file data (only once on mount)
 	fetchExampleFiles = async () => {
-		const exampleAlignmentFile = await (await fetch(`${import.meta.env.BASE_URL || ''}${EXAMPLE_ALIGNMENT_FILE}`)).arrayBuffer();
+		const exampleInputFile = await (await fetch(`${import.meta.env.BASE_URL || ''}${EXAMPLE_INPUT_FILE}`)).arrayBuffer();
 
-		this.setState({ exampleAlignmentFile: exampleAlignmentFile })
+		this.setState({ exampleInputFile: exampleInputFile })
 	}
 
 	initPreloadedRefs = async () => {
-		console.log(`${import.meta.env.BASE_URL || ''}${REF_GENOME_REPO_STRUCTURE_LINK}`)
 		const REFS = await (await fetch(`${import.meta.env.BASE_URL || ''}${REF_GENOME_REPO_STRUCTURE_LINK}`)).json();
 		const preloadRefOptions = Object.entries(REFS).map(arr =>
 			<option value={arr[0]} key={arr[1].name}>{arr[1].name}</option>
@@ -161,38 +164,69 @@ export class App extends Component {
 		})
 	}
 
-	selectRefFile = (e) => {
-		this.setState({ refFile: e.target.files[0], refFileValid: true, inputChanged: true })
+	selectRefFiles = (e) => {
+		const refFiles = [...(this.state.refFiles || []), ...Array.from(e.target.files)];
+		this.setState({
+			exampleDataLoaded: false,
+			preloadedRef: undefined,
+			refFiles,
+			refFilesValid: true,
+			inputChanged: true,
+		})
+		if (refFiles.length > 1) {
+			document.getElementById('reference-file').value = null;
+		}
 	}
 
-	clearRefFile = () => {
-		if (this.state.refFile !== undefined) {
+	clearRefFiles = () => {
+		if (this.state.refFiles !== undefined) {
 			this.setState({ inputChanged: true })
 		}
-		this.setState({ refFile: undefined })
+		this.setState({ refFiles: undefined })
 		document.getElementById('reference-file').value = null;
 	}
 
-	setPreloadedRef = (event) => {
-		this.setState({ preloadedRef: event.target.value === 'undefined' ? undefined : event.target.value, inputChanged: true, refFileValid: true })
+	deleteRefFile = (index) => {
+		document.getElementById("reference-file").value = null;
+
+		const refFiles = [...this.state.refFiles];
+		refFiles.splice(index, 1);
+
+		this.setState({
+			refFiles,
+			refFilesValid: refFiles.length > 0,
+			inputChanged: true
+		})
 	}
 
-	selectAlignmentFiles = (e) => {
-		const currentAlignmentFiles = this.state.alignmentFiles === 'EXAMPLE_DATA' ? [] : this.state.alignmentFiles;
-		const alignmentFiles = [...(currentAlignmentFiles || []), ...Array.from(e.target.files)];
-		this.setState({
-			alignmentFiles: alignmentFiles,
-			alignmentFilesValid: this.validAlignmentFiles(alignmentFiles),
-			inputChanged: true,
-			alignmentFilesAreFASTQ: ARE_FASTQ(alignmentFiles),
-		}, () => {
-			if (alignmentFiles.length > 1) {
-				document.getElementById('alignment-files').value = null;
+	setPreloadedRef = (event) => {
+		this.setState(prevState => {
+			return {
+				exampleDataLoaded: false,
+				preloadedRef: event.target.value === '' ? undefined : event.target.value,
+				inputChanged: true,
+				refFilesValid: true,
+				inputFiles: prevState.exampleDataLoaded ? undefined : prevState.inputFiles,
 			}
 		})
 	}
 
-	validAlignmentFiles = (files) => {
+	selectInputFiles = (e) => {
+		const currentInputFiles = this.state.exampleDataLoaded ? [] : this.state.inputFiles;
+		const inputFiles = [...(currentInputFiles || []), ...Array.from(e.target.files)];
+		this.setState({
+			exampleDataLoaded: false,
+			inputFiles: inputFiles,
+			inputFilesValid: this.validInputFiles(inputFiles),
+			inputChanged: true,
+			inputFilesAreFASTQ: ARE_FASTQ(inputFiles),
+		})
+		if (inputFiles.length > 1) {
+			document.getElementById('input-files').value = null;
+		}
+	}
+
+	validInputFiles = (files) => {
 		if (files === undefined) {
 			return false;
 		}
@@ -208,25 +242,30 @@ export class App extends Component {
 		return ARE_FASTQ(files);
 	}
 
-	clearAlignmentFiles = () => {
+	clearInputFiles = () => {
 		this.setState({
-			alignmentFiles: undefined,
-			alignmentFilesValid: true,
+			inputFiles: undefined,
+			inputFilesValid: true,
 			inputChanged: true,
-			alignmentFilesAreFASTQ: false,
+			inputFilesAreFASTQ: false,
 		})
-		document.getElementById('alignment-files').value = null;
+		document.getElementById('input-files').value = null;
 	}
 
-	deleteAlignmentFile = (index) => {
-		document.getElementById("alignment-files").value = null;
+	deleteInputFile = (index) => {
+		document.getElementById("input-files").value = null;
 
-		const alignmentFiles = [...this.state.alignmentFiles];
-		alignmentFiles.splice(index, 1);
+		const inputFiles = [...this.state.inputFiles];
+		inputFiles.splice(index, 1);
 
-		const alignmentFilesValid = this.validAlignmentFiles(alignmentFiles);
-		const alignmentFilesAreFASTQ = ARE_FASTQ(alignmentFiles);
-		this.setState({ alignmentFiles, alignmentFilesValid, alignmentFilesAreFASTQ, inputChanged: true })
+		const inputFilesValid = this.validInputFiles(inputFiles);
+		const inputFilesAreFASTQ = ARE_FASTQ(inputFiles);
+		this.setState({
+			inputFiles,
+			inputFilesValid,
+			inputFilesAreFASTQ,
+			inputChanged: true
+		})
 	}
 
 	setTrimInput = (e) => {
@@ -317,21 +356,23 @@ export class App extends Component {
 
 	toggleLoadExampleData = () => {
 		this.setState(prevState => {
-			const preloadedRef = (prevState.alignmentFiles === 'EXAMPLE_DATA') ? this.state.preloadedRef : EXAMPLE_REF;
-			const refFile = (prevState.alignmentFiles === 'EXAMPLE_DATA') ? document.getElementById('reference-file')?.files[0] : undefined;
-			if (refFile === undefined) {
-				document.getElementById('reference-file').value = null;
+			const notExampleOrEmptyData = (prevState.exampleDataLoaded && prevState.inputFiles !== undefined && prevState.inputFiles.length > 0)
+				|| (prevState.refFiles !== undefined && prevState.refFileName.length > 0)
+				|| (prevState.preloadedRef !== EXAMPLE_REF && prevState.preloadedRef !== undefined);
+			if (notExampleOrEmptyData && !window.confirm("Are you sure you want to load example data? All current input data will be lost.")) {
+				return;
 			}
-			const alignmentFiles = (prevState.alignmentFiles === 'EXAMPLE_DATA') ? Array.from(document.getElementById('alignment-files')?.files) : 'EXAMPLE_DATA';
-			const alignmentFilesAreFASTQ = (alignmentFiles === 'EXAMPLE_DATA') ? false : ARE_FASTQ(Array.from(document.getElementById('alignment-files').files));
+			document.getElementById('input-files').value = null;
+			document.getElementById('reference-file').value = null;
 			return {
-				preloadedRef,
-				refFile,
-				alignmentFiles,
-				alignmentFilesAreFASTQ,
-				refFileValid: true,
-				alignmentFilesValid: true,
-				inputChanged: prevState.refFile !== refFile || prevState.alignmentFiles !== alignmentFiles
+				preloadedRef: EXAMPLE_REF,
+				exampleDataLoaded: true,
+				refFiles: undefined,
+				inputFiles: undefined,
+				inputFilesAreFASTQ: false,
+				refFilesValid: true,
+				inputFilesValid: true,
+				inputChanged: true,
 			}
 		})
 	}
@@ -363,28 +404,28 @@ export class App extends Component {
 			this.setState(defaults);
 		});
 		document.getElementById('reference-file').value = null;
-		document.getElementById('alignment-files').value = null;
+		document.getElementById('input-files').value = null;
 		document.getElementById('primer-file').value = null;
 	}
 
 	validInput = () => {
 		let valid = true;
-		let refFileValid = true;
-		let alignmentFilesValid = true;
+		let refFilesValid = true;
+		let inputFilesValid = true;
 		// Note: Other input validation is done in the setters
 
 		CLEAR_LOG()
 		this.log("Validating input...")
 
-		if (!this.state.refFile && !this.state.preloadedRef) {
-			refFileValid = false;
+		if ((!this.state.refFiles || this.state.refFiles.length === 0) && !this.state.preloadedRef) {
+			refFilesValid = false;
 		}
 
-		if (this.state.alignmentFiles !== 'EXAMPLE_DATA' && !this.validAlignmentFiles(this.state.alignmentFiles)) {
-			alignmentFilesValid = false;
+		if (!this.state.exampleDataLoaded && !this.validInputFiles(this.state.inputFiles)) {
+			inputFilesValid = false;
 		}
 
-		valid = refFileValid && alignmentFilesValid &&
+		valid = refFilesValid && inputFilesValid &&
 			this.state.primerOffsetValid &&
 			this.state.minBaseQualityValid &&
 			this.state.minDepthValid &&
@@ -394,12 +435,12 @@ export class App extends Component {
 			this.state.trimTail1Valid &&
 			this.state.fastpCompressionLevelValid;
 
-		this.setState({ refFileValid, alignmentFilesValid })
+		this.setState({ refFilesValid, inputFilesValid })
 
 		return valid;
 	}
 
-	runViralWasmConsensus = async () => {
+	run = async () => {
 		if (this.state.loading) {
 			alert('Current job is running. To run a new job, please wait for the current job to finish or refresh the page.');
 			return;
@@ -412,7 +453,7 @@ export class App extends Component {
 		}
 
 		if (this.state.CLI === undefined) {
-			setTimeout(this.runViralWasmConsensus, 1000)
+			setTimeout(this.run, 1000)
 		} else {
 			window.scrollTo({
 				top: window.innerHeight / 4,
@@ -430,6 +471,7 @@ export class App extends Component {
 			} catch (e) {
 				this.log('\n', false);
 				this.log(ERROR_MSG(e.message));
+				console.log(e);
 				this.setState({ errorMessage: ERROR_MSG(e.message) })
 			}
 			this.setState({ loading: false, done: true, timeElapsed: ((performance.now() - startTime) / 1000).toFixed(3) })
@@ -440,74 +482,174 @@ export class App extends Component {
 
 	runViralConsensus = async () => {
 		const CLI = this.state.CLI;
+		this.setState({
+			errorMessage: undefined,
+			done: false,
+			timeElapsed: undefined,
+			loading: true,
+			inputChanged: false,
+			consensusFiles: undefined,
+			posCountsFiles: undefined,
+			insCountsFiles: undefined,
+			trimmedOutputFiles: undefined,
+			alignedOutputFiles: undefined
+		})
 
-		this.log("Starting job...")
-		this.setState({ errorMessage: undefined, done: false, timeElapsed: undefined, loading: true, inputChanged: false, consensusExists: false, posCountsExists: false, insCountsExists: false, fastpOutputExists: false, minimap2OutputExists: false })
+		let sequencesFileName = undefined;
 
-		const refFileName = DEFAULT_REF_FILE_NAME;
-		const alignmentFileName = (this.state.alignmentFiles[0]?.name?.endsWith('.bam') || this.state.alignmentFiles === 'EXAMPLE_DATA') ?
-			DEFAULT_ALIGNMENT_BAM_FILE_NAME : DEFAULT_ALIGNMENT_SAM_FILE_NAME;
-		const primerFileName = DEFAULT_PRIMER_FILE_NAME;
-
-		let command = `viral_consensus -i ${this.state.alignmentFilesAreFASTQ ? MINIMAP2_OUTPUT_FILE_NAME : alignmentFileName} -r ${refFileName} -o ${CONSENSUS_FILE_NAME}`;
-
-		this.log("Reading reference file...")
-		// Create example reference fasta file
-		if (this.state.refFile !== undefined) {
-			await CLI.fs.writeFile(DEFAULT_REF_FILE_NAME, await this.fileReaderReadFile(this.state.refFile));
-		} else {
-			const refFileData = await (await fetch(`${import.meta.env.BASE_URL || ''}${REF_GENOMES_DIR}${this.state.preloadedRef}/${this.state.preloadedRef}.fas`)).text();
-			await CLI.fs.writeFile(DEFAULT_REF_FILE_NAME, refFileData);
+		// handle fastq files, need to gzip / run fastp
+		if (this.state.inputFilesAreFASTQ) {
+			sequencesFileName = this.trimInput ? TRIMMED_SEQUENCES_FILE_NAME : SEQUENCES_FILE_NAME;
+			let totalFastp = 0;
+			for (let i = 0; i < this.state.inputFiles.length; i++) {
+				const inputFile = this.state.inputFiles[i];
+				let inputFileData = await this.fileReaderReadFile(inputFile, true);
+				if (!IS_GZIP(inputFileData)) {
+					this.log("Gzipping selected input file " + inputFile.name + " before running minimap2...")
+					inputFileData = Pako.gzip(inputFileData);
+				} else {
+					this.log("Input file " + inputFile.name + " is already gzipped, skipping gzip...")
+				}
+				if (this.state.trimInput) {
+					const fastpStartTime = performance.now();
+					inputFileData = await this.trimInput(inputFileData)
+					const time = (performance.now() - fastpStartTime);
+					this.log('\n', false)
+					this.log(`${inputFile.name} trimming finished in ${(time / 1000).toFixed(3)} seconds\n`)
+					totalFastp += time;
+				}
+				await CLI.fs.writeFile(sequencesFileName, new Uint8Array(inputFileData), { flags: 'a' });
+				inputFileData = undefined;
+			}
+			if (this.state.trimInput) {
+				this.log(`Fastp finished in ${(totalFastp / 1000).toFixed(3)} seconds`)
+			}
+			await this.deleteFile(TEMP_FASTP_INPUT);
+			await this.deleteFile(TEMP_FASTP_OUTPUT);
+			const trimmedOutputFiles = this.state.inputFilesAreFASTQ && this.state.trimInput && (await CLI.ls(TRIMMED_SEQUENCES_FILE_NAME))?.size > 0;
+			this.setState({ trimmedOutputFiles: trimmedOutputFiles ? [TRIMMED_SEQUENCES_FILE_NAME] : undefined });
 		}
 
-		// Handle input read files, run fastp (trimming) and minimap2 (alignment), as necessary
-		this.log("Reading input read file(s)...")
-		if (this.state.alignmentFiles === 'EXAMPLE_DATA') {
-			await CLI.fs.writeFile(DEFAULT_ALIGNMENT_BAM_FILE_NAME, new Uint8Array(this.state.exampleAlignmentFile));
+		// handle reference file
+		let refFilesSequences = undefined;
+		this.log("Reading reference file(s)...")
+		// Using example reference file, create example reference fasta file
+		if (this.state.refFiles === undefined || this.state.refFiles.length === 0) {
+			const refFilesData = await (await fetch(`${import.meta.env.BASE_URL || ''}${REF_GENOMES_DIR}${this.state.preloadedRef}/${this.state.preloadedRef}.fas`)).text();
+			await CLI.fs.writeFile(DEFAULT_REF_FILE_NAME, refFilesData);
+			refFilesSequences = [refFilesData];
 		} else {
-			const alignmentFileData = await this.fileReaderReadFile(this.state.alignmentFiles[0], true);
-			const selectedFileName = this.state.alignmentFiles[0].name;
+			const refFilesData = await this.fileReaderReadAndMergeFiles(this.state.refFiles);
+			refFilesSequences = refFilesData
+				// first split by > to get each sequence
+				.split(/(?=>)/g)
+				// remove empty strings by splitting by newlines, removing whitespace, 
+				// filtering out empty strings, and joining back together
+				.map(seq => seq.split("\n")
+					.map(line => line.trim())
+					.filter(line => line.length > 0)
+					.join("\n"));
+
+			if (refFilesSequences.some(seq => seq.length === 0)) {
+				this.log("Error: Invalid reference file. Contains empty sequences.")
+				throw new Error('Invalid reference file');
+			}
+		}
+
+		const singleRefInputFileName = (this.state.exampleDataLoaded || this.state.inputFiles[0]?.name?.endsWith('.bam')) ?
+			DEFAULT_INPUT_BAM_FILE_NAME : DEFAULT_INPUT_SAM_FILE_NAME;
+
+		// don't do special file creation / handling if there's only one sequence
+		if (refFilesSequences.length === 1) {
+			await CLI.fs.writeFile(DEFAULT_REF_FILE_NAME, refFilesSequences[0]);
+			const outputFiles = await this.runViralConsensusSingleReference(singleRefInputFileName, sequencesFileName);
+			this.setState({ ...outputFiles });
+		} else {
+			this.log(`Detected ${refFilesSequences.length} sequences from ${this.state.refFiles.length} reference file(s). Running consensus for each sequence...`)
+			const allFiles = {};
+			const repeatedPrefixes = {};
+			for (let i = 0; i < refFilesSequences.length; i++) {
+				// if the input files are fastq, we need to run minimap2 on each sequence (aligning to each reference)
+				// otherwise, we can just run viral consensus on the input file (which doesn't vay by reference)
+				const seqData = refFilesSequences[i];
+				// get the first 30 characters of the sequence header to use as a prefix 
+				// add a number if there are multiple sequences with the same prefix
+				let seqHeaderPrefix = seqData.split("\n")[0].substring(1, 30);
+				seqHeaderPrefix = seqHeaderPrefix.replace(/[/\\?%*:|"<>]/g, '-');
+				seqHeaderPrefix = seqHeaderPrefix.replace(/[\s.]/g, '_');
+				seqHeaderPrefix += repeatedPrefixes[seqHeaderPrefix] >= 1 ? `-${repeatedPrefixes[seqHeaderPrefix]}` : '';
+				if (repeatedPrefixes[seqHeaderPrefix] === undefined) {
+					repeatedPrefixes[seqHeaderPrefix] = 1;
+				} else {
+					repeatedPrefixes[seqHeaderPrefix]++;
+				}
+				const inputFileName = this.state.inputFilesAreFASTQ
+					? `${BIOWASM_WORKING_DIR}${seqHeaderPrefix}.sam`
+					: singleRefInputFileName;
+				const refFileName = `${BIOWASM_WORKING_DIR}${seqHeaderPrefix}.ref.fas`;
+				const consenusFileName = `${BIOWASM_WORKING_DIR}${seqHeaderPrefix}.consensus.fas`;
+				const positionCountsFileName = `${BIOWASM_WORKING_DIR}${seqHeaderPrefix}.positionCounts.tsv`;
+				const insertionCountsFileName = `${BIOWASM_WORKING_DIR}${seqHeaderPrefix}.insertionCounts.tsv`;
+				await CLI.fs.writeFile(refFileName, seqData);
+				const outputFiles = await this.runViralConsensusSingleReference(
+					inputFileName,
+					sequencesFileName,
+					refFileName,
+					consenusFileName,
+					positionCountsFileName,
+					insertionCountsFileName,
+					seqHeaderPrefix
+				);
+				for (const key of Object.keys(outputFiles)) {
+					if (outputFiles[key] === undefined) {
+						continue;
+					}
+					if (allFiles[key] === undefined) {
+						allFiles[key] = [];
+					}
+					allFiles[key].push(...outputFiles[key]);
+				}
+			}
+			this.setState({ ...allFiles });
+		}
+	}
+
+	runViralConsensusSingleReference = async (inputFileName, sequencesFileName, refFileName = DEFAULT_REF_FILE_NAME, consensusFileName = CONSENSUS_FILE_NAME, positionCountsFileName = POSITION_COUNTS_FILE_NAME, insertionCountsFileName = INSERTION_COUNTS_FILE_NAME, seqHeaderPrefix) => {
+		const CLI = this.state.CLI;
+
+		if (seqHeaderPrefix) {
+			this.log(`Starting consensus job for sequence: ${seqHeaderPrefix}...`)
+		} else {
+			this.log("Starting consensus job...")
+		}
+
+		const primerFileName = DEFAULT_PRIMER_FILE_NAME;
+
+		let command = `viral_consensus -i ${inputFileName} -r ${refFileName} -o ${consensusFileName}`;
+
+		// Handle input read files, run fastp (trimming) and minimap2 (input), as necessary
+		this.log("Reading input read file(s)...")
+		if (this.state.exampleDataLoaded) {
+			await CLI.fs.writeFile(DEFAULT_INPUT_BAM_FILE_NAME, new Uint8Array(this.state.exampleInputFile));
+		} else {
+			const inputFileData = await this.fileReaderReadFile(this.state.inputFiles[0], true);
+			const selectedFileName = this.state.inputFiles[0].name;
 			if (selectedFileName.endsWith('.bam') ||
 				selectedFileName.endsWith('.sam')) {
 				// Handle bam/sam files, don't need to run minimap2 
-				this.log("Recognized alignment file as BAM/SAM, reading file...")
-				await CLI.fs.writeFile(alignmentFileName, new Uint8Array(alignmentFileData));
-			} else if (this.state.alignmentFilesAreFASTQ) {
-				// Handle fastq files, need to run minimap2 (already handled in the declaration of command)
-				this.log("Recognized alignment file(s) as FASTQ, reading file...")
-				const sequencesFile = this.state.trimInput ? FASTP_OUTPUT_FILE_NAME : COMBINED_SEQUENCES_FILE_NAME;
-
-				// Add additional alignment files (fastq files)
-				let totalFastp = 0;
-				for (let i = 0; i < this.state.alignmentFiles.length; i++) {
-					const alignmentFile = this.state.alignmentFiles[i];
-					let alignmentFileData = await this.fileReaderReadFile(alignmentFile, true);
-					if (!IS_GZIP(alignmentFileData)) {
-						this.log("Gzipping selected alignment file " + alignmentFile.name + " before running minimap2...")
-						alignmentFileData = Pako.gzip(alignmentFileData);
-					} else {
-						this.log("Alignment file " + alignmentFile.name + " is already gzipped, skipping gzip...")
-					}
-					if (this.state.trimInput) {
-						const fastpStartTime = performance.now();
-						alignmentFileData = await this.trimInput(alignmentFileData)
-						const time = (performance.now() - fastpStartTime);
-						this.log('\n', false)
-						this.log(`${alignmentFile.name} trimming finished in ${(time / 1000).toFixed(3)} seconds\n`)
-						totalFastp += time;
-					}
-					await CLI.fs.writeFile(sequencesFile, new Uint8Array(alignmentFileData), { flags: 'a' });
-					alignmentFileData = undefined;
+				const inputFile = await CLI.ls(inputFileName);
+				if (!inputFile || inputFile.size === 0) {
+					this.log("Recognized input file as BAM/SAM, reading file...")
+					await CLI.fs.writeFile(inputFileName, new Uint8Array(inputFileData));
 				}
-				if (this.state.trimInput) {
-					this.log(`Fastp finished in ${(totalFastp / 1000).toFixed(3)} seconds`)
-				}
-				await this.deleteFile(TEMP_FASTP_INPUT);
-				await this.deleteFile(TEMP_FASTP_OUTPUT);
+			} else if (this.state.inputFilesAreFASTQ) {
+				// Handle fastq files, need to run minimap2
+				this.log("Recognized input file(s) as FASTQ, reading file...")
 
-				await CLI.fs.writeFile(MINIMAP2_OUTPUT_FILE_NAME, new Uint8Array());
+				await CLI.fs.writeFile(inputFileName, new Uint8Array());
 
-				const minimap2Command = `minimap2 -t 1 -a -o ${MINIMAP2_OUTPUT_FILE_NAME} ${refFileName} ${sequencesFile}`;
+				// create the input file (aligned sequences) to be used by ViralConsensus
+				const minimap2Command = `minimap2 -t 1 -a -o ${inputFileName} ${refFileName} ${sequencesFileName}`;
 				this.log('\n', false);
 				this.log('Aligning sequences...')
 				this.log('Running command: ' + minimap2Command + '\n')
@@ -515,8 +657,8 @@ export class App extends Component {
 				await CLI.exec(minimap2Command);
 				const properRun = (new RegExp(/mapped \d+ sequences/gm)).test(document.getElementById("output-text").value) &&
 					!(new RegExp(/failed to parse the FASTA\/FASTQ/gm)).test(document.getElementById("output-text").value);
-				const validOutFile = (await CLI.fs.stat(MINIMAP2_OUTPUT_FILE_NAME)).size > 0;
-				if (!properRun || !validOutFile) {
+				const inputFile = await CLI.ls(inputFileName);
+				if (!properRun || !inputFile || inputFile.size === 0) {
 					throw new Error('minimap2');
 				}
 
@@ -525,8 +667,11 @@ export class App extends Component {
 
 			} else {
 				// Handle other file types, assuming bam/sam, but giving a warning
-				this.log("WARNING: Alignment file type not recognized. Assuming bam/sam format.")
-				await CLI.fs.writeFile(alignmentFileName, new Uint8Array(alignmentFileData));
+				const inputFile = await CLI.ls(inputFileName);
+				if (!inputFile || inputFile.size === 0) {
+					this.log("WARNING: Input file type not recognized. Assuming bam/sam format.")
+					await CLI.fs.writeFile(inputFileName, new Uint8Array(inputFileData));
+				}
 			}
 		}
 
@@ -547,11 +692,11 @@ export class App extends Component {
 
 		// Set output files
 		if (this.state.genPosCounts) {
-			command += ' -op ' + POSITION_COUNTS_FILE_NAME;
+			command += ' -op ' + positionCountsFileName;
 		}
 
 		if (this.state.genInsCounts) {
-			command += ' -oi ' + INSERTION_COUNTS_FILE_NAME;
+			command += ' -oi ' + insertionCountsFileName;
 		}
 
 		// Generate consensus genome (run ViralConsensus)
@@ -564,7 +709,7 @@ export class App extends Component {
 		if (commandError.stderr !== '') {
 			throw new Error('ViralConsensus');
 		}
-		const consensusFile = await CLI.ls(CONSENSUS_FILE_NAME);
+		const consensusFile = await CLI.ls(consensusFileName);
 		if (!consensusFile || consensusFile.size === 0) {
 			this.log("Error: No consensus genome generated. Please check your input files.")
 			throw new Error('ViralConsensus');
@@ -573,17 +718,23 @@ export class App extends Component {
 		this.log(`ViralConsensus finished in ${((performance.now() - viralConsensusStartTime) / 1000).toFixed(3)} seconds`)
 
 		// Check if output files exist
-		const posCountsExists = (await CLI.ls(POSITION_COUNTS_FILE_NAME))?.size > 0;
-		const insCountsExists = (await CLI.ls(INSERTION_COUNTS_FILE_NAME))?.size > 0;
-		const fastpOutputExists = (await CLI.ls(FASTP_OUTPUT_FILE_NAME))?.size > 0;
-		const minimap2OutputExists = (await CLI.ls(MINIMAP2_OUTPUT_FILE_NAME))?.size > 0;
-		this.setState({ consensusExists: true, posCountsExists, insCountsExists, fastpOutputExists, minimap2OutputExists })
+		const posCountsFiles = (await CLI.ls(positionCountsFileName))?.size > 0;
+		const insCountsFiles = (await CLI.ls(insertionCountsFileName))?.size > 0;
+		const alignedOutputFiles = this.state.inputFilesAreFASTQ && (await CLI.ls(inputFileName))?.size > 0;
+		// return output file names
+		const outputFiles = {
+			consensusFiles: [consensusFileName],
+			posCountsFiles: posCountsFiles ? [positionCountsFileName] : undefined,
+			insCountsFiles: insCountsFiles ? [insertionCountsFileName] : undefined,
+			alignedOutputFiles: alignedOutputFiles ? [inputFileName] : undefined
+		}
+		return outputFiles;
 	}
 
-	trimInput = async (alignmentFileData) => {
+	trimInput = async (inputFileData) => {
 		const CLI = this.state.CLI;
 		this.log("Trimming input reads...")
-		await CLI.fs.writeFile(TEMP_FASTP_INPUT, new Uint8Array(alignmentFileData))
+		await CLI.fs.writeFile(TEMP_FASTP_INPUT, new Uint8Array(inputFileData))
 
 		let fastpCommand = `fastp -i ${TEMP_FASTP_INPUT} -o ${TEMP_FASTP_OUTPUT} --json /dev/null --html /dev/null`;
 
@@ -614,7 +765,7 @@ export class App extends Component {
 
 	// Helper function to read file as text or arraybuffer and promisify
 	fileReaderReadFile = async (file, asArrayBuffer = false) => {
-		return new Promise((resolve, reject) => {
+		return new Promise((resolve) => {
 			const fileReader = new FileReader();
 			fileReader.onload = () => {
 				resolve(fileReader.result);
@@ -627,26 +778,69 @@ export class App extends Component {
 		})
 	}
 
-	downloadFile = async (filename) => {
-		const CLI = this.state.CLI;
-		if (!(await CLI.ls(filename))) {
-			return;
+	// Helper function to read and concatenate multiple files
+	fileReaderReadAndMergeFiles = async (files, asArrayBuffer = false) => {
+		const fileDataPromises = [];
+		for (const file of files) {
+			fileDataPromises.push(this.fileReaderReadFile(file, asArrayBuffer));
 		}
+		const fileData = await Promise.all(fileDataPromises);
+		return fileData.join('\n');
+	}
 
-		// remove absolute path from file name
-		filename = filename.split('/').pop();
+	toggleCompressSingle = () => {
+		this.setState(prevState => { return { compressSingle: !prevState.compressSingle } });
+	}
 
-		const fileBlob = new Blob([await CLI.fs.readFile(filename, { encoding: 'binary' })], { type: 'application/octet-stream' });
-		var objectUrl = URL.createObjectURL(fileBlob);
+	toggleDownloadZip = () => {
+		this.setState(prevState => { return { downloadZip: !prevState.downloadZip } });
+	}
+
+	downloadFiles = async (outputFile, logName) => {
+		const CLI = this.state.CLI;
+
+		const files = this.state[outputFile];
+		const fileNames = files.map(file => file.split('/').pop());
+
+		let outputFileName = undefined;
+		let objectUrl = undefined;
+		if (files.length === 1 && !this.state.compressSingle) {
+			outputFileName = fileNames[0];
+			const fileData = await CLI.fs.readFile(files[0], { encoding: 'binary' });
+			objectUrl = URL.createObjectURL(new Blob([fileData], { type: 'application/octet-stream' }));
+		} else if (this.state.downloadZip) {
+			outputFileName = "viralwasm-consensus-" + outputFile + ".zip";
+			const zipWriter = new ZipWriter(new BlobWriter(), { level: 9 });
+			for (let i = 0; i < files.length; i++) {
+				const file = files[i];
+				const fileName = fileNames[i];
+				const fileData = await CLI.fs.readFile(file, { encoding: 'binary' });
+				await zipWriter.add(fileName, new Blob([new Uint8Array(fileData)]).stream());
+			}
+			const zipBlob = await zipWriter.close();
+			objectUrl = URL.createObjectURL(zipBlob);
+
+		} else {
+			outputFileName = "viralwasm-consensus-" + outputFile + ".tar.gz";
+			const tarWriter = new TarWriter();
+			for (let i = 0; i < files.length; i++) {
+				const file = files[i];
+				const fileName = fileNames[i];
+				const fileData = await CLI.fs.readFile(file, { encoding: 'binary' });
+				tarWriter.addFile(fileName, fileData);
+			}
+			const tarBlob = await tarWriter.write();
+			const tarGzBlob = Pako.gzip(await tarBlob.arrayBuffer());
+			objectUrl = URL.createObjectURL(new Blob([tarGzBlob], { type: 'application/octet-stream' }));
+		}
 
 		const element = document.createElement("a");
 		element.href = objectUrl;
-		element.download = filename;
+		element.download = outputFileName;
 		document.body.appendChild(element);
 		element.click();
 		document.body.removeChild(element);
-
-		this.log(`Downloaded ${filename}`)
+		this.log(`Downloaded ${logName} file(s): ${fileNames.join(', ')}`)
 	}
 
 	clearFiles = async () => {
@@ -716,29 +910,29 @@ export class App extends Component {
 						</div>
 						<div id="input-content">
 							<div className="d-flex flex-column mb-4">
-								<label htmlFor="alignment-files" className="form-label">Select Input Reads File(s) (BAM, SAM, FASTQ(s))<span className="text-danger"> *</span></label>
-								<input className={`form-control ${!this.state.alignmentFilesValid && 'is-invalid'}`} type="file" multiple accept=".sam,.bam,.fastq,.fastq.gz,.fq,.fq.gz,.fas.gz,.fas,.fa,.fa.gz,.fasta,.fasta.gz" id="alignment-files" data-testid="alignment-files" onChange={this.selectAlignmentFiles} />
-								{this.state.alignmentFiles === 'EXAMPLE_DATA' &&
+								<label htmlFor="input-files" className="form-label">Select Input Reads File(s) (BAM, SAM, FASTQ(s))<span className="text-danger"> *</span></label>
+								<input className={`form-control ${!this.state.inputFilesValid && 'is-invalid'}`} type="file" multiple accept=".sam,.bam,.fastq,.fastq.gz,.fq,.fq.gz,.fas.gz,.fas,.fa,.fa.gz,.fasta,.fasta.gz" id="input-files" data-testid="input-files" onChange={this.selectInputFiles} />
+								{this.state.exampleDataLoaded &&
 									<p className="mt-2 mb-0"><strong>Using Loaded Example file: <a
-										href={`${import.meta.env.BASE_URL || ''}${EXAMPLE_ALIGNMENT_FILE}`}
+										href={`${import.meta.env.BASE_URL || ''}${EXAMPLE_INPUT_FILE}`}
 										target="_blank" rel="noreferrer">example.bam</a></strong></p>
 								}
 							</div>
 
 							{/* NOTE: we assume here that if they select more than one file, they are intending to select multiple FASTQ files */}
-							{typeof this.state.alignmentFiles === 'object' && this.state.alignmentFiles.length > 0 &&
-								<div id="alignment-files-list" className={`d-flex flex-column mb-4`}>
+							{this.state.inputFiles?.length > 0 &&
+								<div id="input-files-list" className={`d-flex flex-column mb-4`}>
 									<p>Selected Input Reads Files (If multiple files, must all be FASTQ):</p>
 									<ul className="list-group">
-										{this.state.alignmentFiles.map((file, i) => {
-											const validFile = !ARE_FASTQ([file]) && this.state.alignmentFiles.length !== 1;
+										{this.state.inputFiles.map((file, i) => {
+											const validFile = !ARE_FASTQ([file]) && this.state.inputFiles.length !== 1;
 											return (
 												<li key={i} className={`list-group-item d-flex justify-content-between ${validFile && 'text-danger'}`}>
 													<div>
 														{file.name}
 													</div>
 													<div>
-														<i className="bi bi-trash text-danger cursor-pointer" onClick={() => this.deleteAlignmentFile(i)}></i>
+														<i className="bi bi-trash text-danger cursor-pointer" onClick={() => this.deleteInputFile(i)}></i>
 														{validFile &&
 															<i className="bi bi-exclamation-circle ms-3"></i>
 														}
@@ -747,43 +941,60 @@ export class App extends Component {
 											)
 										})}
 									</ul>
-									<button className="btn btn-danger mt-3" onClick={this.clearAlignmentFiles}>Clear Input Reads Files</button>
+									<button className="btn btn-danger mt-3" onClick={this.clearInputFiles}>Clear Input Reads Files</button>
 								</div>
 							}
 
-							<div className={`${this.state.refFile !== undefined ? 'disabled-input' : ''}`}>
-								<label htmlFor="common-sequences" className="form-label mt-2">
+							<div className={`${this.state.refFiles !== undefined ? 'disabled-input' : ''}`}>
+								<label htmlFor="common-sequences" className="form-label mt-4">
 									Select Preloaded Reference Sequence
-									{this.state.refFile !== undefined &&
-										<span className='mt-2 text-warning'>
-											<strong>&nbsp;(Using Selected Sequence)</strong>
-										</span>
-									}
 								</label>
-								<select className={`form-select  ${!this.state.refFileValid && 'is-invalid'}`} aria-label="Default select example" id="common-sequences" value={this.state.preloadedRef ?? ''} onChange={this.setPreloadedRef}>
+								<select className={`form-select  ${!this.state.refFilesValid && 'is-invalid'}`} aria-label="Default select example" id="common-sequences" value={this.state.preloadedRef ?? ''} onChange={this.setPreloadedRef}>
 									<option value="">Select a Reference Sequence</option>
 									{this.state.preloadRefOptions}
 								</select>
 							</div>
 
-							<h5 className="mt-2 text-center">&#8213; OR &#8213;</h5>
+							<h5 className="mt-1 mb-0 text-center">&#8213; OR &#8213;</h5>
 
 							<div className="d-flex flex-column mb-4">
 								<label htmlFor="reference-file" className="form-label">Reference File (FASTA)<span className="text-danger"> *</span></label>
 								<div className="input-group">
-									<input className={`form-control ${!this.state.refFileValid && 'is-invalid'}`} type="file" id="reference-file" data-testid="reference-file" onChange={this.selectRefFile} />
-									<button className="btn btn-outline-danger" type="button" id="reference-file-addon" onClick={this.clearRefFile}><i className="bi bi-trash"></i></button>
+									<input className={`form-control ${!this.state.refFilesValid && 'is-invalid'}`} type="file" id="reference-file" data-testid="reference-file" onChange={this.selectRefFiles} />
+									<button className="btn btn-outline-danger" type="button" id="reference-file-addon" onClick={this.clearRefFiles}><i className="bi bi-trash"></i></button>
 								</div>
 							</div>
 
-							<div className='form-check mb-4' style={{ opacity: (typeof this.state.alignmentFiles === 'object' && (this.state.alignmentFiles.length > 1 || this.state.alignmentFilesAreFASTQ)) ? 1 : 0.5 }}>
+							{/* NOTE: we assume here that if they select more than one file, they are intending to select multiple FASTQ files */}
+							{this.state.refFiles?.length > 0 &&
+								<div id="input-files-list" className={`d-flex flex-column mb-4`}>
+									<p>Selected Reference Files:</p>
+									<ul className="list-group">
+										{this.state.refFiles.map((file, i) => {
+											return (
+												<li key={i} className={`list-group-item d-flex justify-content-between`}>
+													<div>
+														{file.name}
+													</div>
+													<div>
+														<i className="bi bi-trash text-danger cursor-pointer" onClick={() => this.deleteRefFile(i)}></i>
+													</div>
+												</li>
+											)
+										})}
+									</ul>
+									<button className="btn btn-danger mt-3" onClick={this.clearInputFiles}>Clear Reference Files</button>
+								</div>
+							}
+
+							<div className='form-check mt-5 mb-2' style={{ opacity: this.state.inputFilesAreFASTQ ? 1 : 0.5 }}>
 								<label className="form-check-label" htmlFor="trim-input-fastq">
 									Trim Input FASTQ Sequences
 								</label>
-								<input className="form-check-input" type="checkbox" name="trim-input-fastq" id="trim-input-fastq" data-testid="trim-input-fastq" checked={this.state.trimInput} onChange={this.setTrimInput} disabled={!(typeof this.state.alignmentFiles === 'object' && (this.state.alignmentFiles.length > 1 || this.state.alignmentFilesAreFASTQ))} />
+								<input className="form-check-input" type="checkbox" name="trim-input-fastq" id="trim-input-fastq" data-testid="trim-input-fastq" checked={this.state.trimInput} onChange={this.setTrimInput} disabled={!this.state.inputFilesAreFASTQ} />
 							</div>
 
-							<h6 className={`mt-5 ${this.state.trimInput ? '' : 'disabled'}`} id="fastp-arguments">Fastp Trim Arguments <i className={`bi bi-chevron-${this.state.trimInput ? 'up' : 'down'}`}></i></h6>
+							<h6 className={`mt-4 ${this.state.trimInput ? '' : 'disabled'}`} id="fastp-arguments">Fastp Trim Arguments <i className={`bi bi-chevron-${this.state.trimInput ? 'up' : 'down'}`}></i></h6>
 							<hr></hr>
 
 							<div className={`${this.state.trimInput ? '' : 'd-none'}`}>
@@ -807,7 +1018,7 @@ export class App extends Component {
 								</div>
 								<div className="form-check mb-4">
 									<label className="form-check-label" htmlFor="trim-poly-x">
-										Enable PolyX Trimming in 3' Ends.
+										Enable PolyX Trimming in 3&apos; Ends.
 									</label>
 									<input className="form-check-input" type="checkbox" name="trim-poly-x" id="trim-poly-x" checked={this.state.trimPolyX} onChange={this.setTrimPolyX} />
 								</div>
@@ -859,11 +1070,11 @@ export class App extends Component {
 						</div>
 
 						<button type="button" className="mt-3 btn btn-danger w-100" onClick={this.promptResetInput}>Reset Input</button>
-						<button type="button" className={`w-100 btn btn-${(this.state.alignmentFiles === 'EXAMPLE_DATA') ? 'success' : 'warning'} mt-3`} onClick={this.toggleLoadExampleData} data-testid="load-example-data">
-							Load Example Data {(this.state.alignmentFiles === 'EXAMPLE_DATA') && <strong>(Currently Using Example Files!)</strong>}
+						<button type="button" className={`w-100 btn btn-${this.state.exampleDataLoaded ? 'success' : 'warning'} mt-3`} onClick={this.toggleLoadExampleData} data-testid="load-example-data">
+							Load Example Data {this.state.exampleDataLoaded && <strong>(Currently Using Example Files!)</strong>}
 						</button>
 
-						<button type="button" className="btn btn-primary w-100 mt-3" onClick={this.runViralWasmConsensus} data-testid='run'>Run ViralWasm-Consensus</button>
+						<button type="button" className="btn btn-primary w-100 mt-3" onClick={this.run} data-testid='run'>Run ViralWasm-Consensus</button>
 					</div>
 
 					<div id="output" className={`form-group ms-4 me-5 ${this.state.expandedContainer === 'output' && 'full-width-container'} ${this.state.expandedContainer === 'input' && 'd-none'}`}>
@@ -882,29 +1093,60 @@ export class App extends Component {
 						</div>
 						{this.state.loading && <img id="loading" className="mt-3" src={loading} />}
 						{this.state.errorMessage && <div className="text-danger text-center mt-3">{this.state.errorMessage}</div>}
-						{(this.state.done && (this.state.consensusExists || this.state.posCountsExists || this.state.insCountsExists) &&
-							<p className="mt-4 mb-2">ViralConsensus Output Files: </p>)}
+						{(this.state.done && (this.state.consensusFiles || this.state.posCountsFiles || this.state.insCountsFiles) &&
+							<div>
+								<p className="mt-4 mb-2">ViralConsensus Output Files: </p>
+								<div className="form-check mt-2">
+									<input className="form-check-input" type="checkbox" id="compress-single-file" checked={this.state.compressSingle} onChange={this.toggleCompressSingle} />
+									<label className="form-check-label" htmlFor="compress-single-file">Compress single-file outputs</label>
+								</div>
+								<div className="form-check mt-2 mb-3">
+									<input className="form-check-input" type="checkbox" id="download-zip" checked={this.state.downloadZip} onChange={this.toggleDownloadZip} />
+									<label className="form-check-label" htmlFor="download-zip">ZIP output (Default: GZIP)</label>
+								</div>
+							</div>
+						)}
 						<div className="download-buttons">
-							{(this.state.done && this.state.consensusExists) && <button type="button" className={`btn btn-primary me-2 w-100`} onClick={() => this.downloadFile(CONSENSUS_FILE_NAME)}>Download Consensus FASTA</button>}
-							{(this.state.done && this.state.posCountsExists) && <button type="button" className={`btn btn-primary mx-2 w-100`} onClick={() => this.downloadFile(POSITION_COUNTS_FILE_NAME)}>Download Position Counts</button>}
-							{(this.state.done && this.state.insCountsExists) && <button type="button" className={`btn btn-primary ms-2 w-100`} onClick={() => this.downloadFile(INSERTION_COUNTS_FILE_NAME)}>Download Insertion Counts</button>}
+							{(this.state.done && this.state.consensusFiles) &&
+								<button type="button" className={`btn btn-primary mx-2 w-100`} onClick={() => this.downloadFiles('consensusFiles', 'consensus')}>
+									Download Consensus FASTA {this.state.consensusFiles.length > 1 && `(${this.state.consensusFiles.length} files)`}
+								</button>
+							}
+							{(this.state.done && this.state.posCountsFiles) &&
+								<button type="button" className={`btn btn-primary mx-2 w-100`} onClick={() => this.downloadFiles('posCountsFiles', 'position counts')}>
+									Download Position Counts {this.state.posCountsFiles.length > 1 && `(${this.state.posCountsFiles.length} files)`}
+								</button>
+							}
+							{(this.state.done && this.state.insCountsFiles) &&
+								<button type="button" className={`btn btn-primary mx-2 w-100`} onClick={() => this.downloadFiles('insCountsFiles', 'insertion counts')}>
+									Download Insertion Counts {this.state.insCountsFiles.length > 1 && `(${this.state.insCountsFiles.length} files)`}
+								</button>
+							}
 						</div>
-						{(this.state.done && (this.state.fastpOutputExists || this.state.minimap2OutputExists) &&
+						{(this.state.done && (this.state.trimmedOutputFiles || this.state.alignedOutputFiles) &&
 							<p className="mt-3 mb-2">Other Output Files:</p>)}
 						<div className="download-buttons">
-							{(this.state.done && this.state.fastpOutputExists) && <button type="button" className={`btn btn-primary me-2 w-100`} onClick={() => this.downloadFile(FASTP_OUTPUT_FILE_NAME)}>Download Trimmed Sequences (FASTP)</button>}
-							{(this.state.done && this.state.minimap2OutputExists) && <button type="button" className={`btn btn-primary ms-2 w-100`} onClick={() => this.downloadFile(MINIMAP2_OUTPUT_FILE_NAME)}>Download Aligned Sequences (Minimap2)</button>}
+							{(this.state.done && this.state.trimmedOutputFiles) &&
+								<button type="button" className={`btn btn-primary mx-2 w-100`} onClick={() => this.downloadFiles('trimmedOutputFiles', 'trimmed sequences')}>
+									Download Trimmed Sequences (FASTP)
+								</button>
+							}
+							{(this.state.done && this.state.alignedOutputFiles) &&
+								<button type="button" className={`btn btn-primary mx-2 w-100`} onClick={() => this.downloadFiles('alignedOutputFiles', 'aligned sequences')}>
+									Download Aligned Sequences (Minimap2) {this.state.alignedOutputFiles.length > 1 && `(${this.state.alignedOutputFiles.length} files)`}
+								</button>
+							}
 						</div>
 						<div id="duration" className="my-3">
 							{this.state.timeElapsed &&
 								<p id="duration-text" data-testid="duration-text">Total runtime: {this.state.timeElapsed} seconds</p>
 							}
 							{this.state.running && !this.state.done &&
-								<Fragment>
+								<React.Fragment>
 									Running ... &nbsp;
-									<img id="running-loading-circle" className="loading-circle ms-2" src={loadingCircle}
+									<img id="running-loading-circle" className="loading-circle ms-2"
 										alt="loading" />
-								</Fragment>
+								</React.Fragment>
 							}
 						</div>
 						{this.state.done && this.state.inputChanged && <p className="text-warning text-center">Warning: Form input has changed since last run, run again to download latest output files.</p>}
@@ -913,11 +1155,12 @@ export class App extends Component {
 				<footer className="w-100 text-center px-5">
 					Source code:&nbsp;<a href="https://github.com/niema-lab/ViralWasm-Consensus/" target="_blank" rel="noreferrer">github.com/niema-lab/ViralWasm-Consensus</a>.
 					<br /><br />
-					<span>Citation: Ji D, Aboukhalil R, Moshiri N (2023). "ViralWasm: a client-side user-friendly web application suite for viral genomics." <i>Bioinformatics</i>. btae018. <a href="https://doi.org/10.1093/bioinformatics/btae018" target="_blank" rel="noreferrer">doi:10.1093/bioinformatics/btae018</a></span>
+					<span>Citation: Ji D, Aboukhalil R, Moshiri N (2023). &quot;ViralWasm: a client-side user-friendly web application suite for viral genomics.&quot; <i>Bioinformatics</i>. btae018. <a href="https://doi.org/10.1093/bioinformatics/btae018" target="_blank" rel="noreferrer">doi:10.1093/bioinformatics/btae018</a></span>
 					<br />
 				</footer>
 
-				{this.state.showOfflineInstructions &&
+				{
+					this.state.showOfflineInstructions &&
 					<div id="offline-instructions">
 						<div className="card">
 							<button type="button" className="btn-close" aria-label="Close" onClick={this.hideOfflineInstructions}></button>
@@ -928,7 +1171,7 @@ export class App extends Component {
 						</div>
 					</div>
 				}
-			</div>
+			</div >
 		)
 	}
 }

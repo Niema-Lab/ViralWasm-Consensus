@@ -13,15 +13,14 @@ export const BIOWASM_WORKING_DIR = "/shared/data/";
 export const OUTPUT_ID = "output-text";
 export const EXAMPLE_REF = "NC_045512"; // SARS-CoV-2 (COVID-19)
 export const DEFAULT_REF_FILE_NAME = BIOWASM_WORKING_DIR + 'ref.fas';
-export const EXAMPLE_ALIGNMENT_FILE = "data/example.bam";
-export const DEFAULT_ALIGNMENT_SAM_FILE_NAME = BIOWASM_WORKING_DIR + 'alignments.sam';
-export const DEFAULT_ALIGNMENT_BAM_FILE_NAME = BIOWASM_WORKING_DIR + 'alignments.bam';
+export const EXAMPLE_INPUT_FILE = "data/example.bam";
+export const DEFAULT_INPUT_SAM_FILE_NAME = BIOWASM_WORKING_DIR + 'inputs.sam';
+export const DEFAULT_INPUT_BAM_FILE_NAME = BIOWASM_WORKING_DIR + 'inputs.bam';
 export const DEFAULT_PRIMER_FILE_NAME = BIOWASM_WORKING_DIR + 'primers.txt';
 export const TEMP_FASTP_INPUT = BIOWASM_WORKING_DIR + 'temp.fastq.gz';
 export const TEMP_FASTP_OUTPUT = BIOWASM_WORKING_DIR + 'temp-trimmed.fastq.gz';
-export const COMBINED_SEQUENCES_FILE_NAME = BIOWASM_WORKING_DIR + 'sequences.fastq.gz';
-export const FASTP_OUTPUT_FILE_NAME = BIOWASM_WORKING_DIR + 'trimmed-sequences.fastq.gz';
-export const MINIMAP2_OUTPUT_FILE_NAME = BIOWASM_WORKING_DIR + 'reads.sam';
+export const SEQUENCES_FILE_NAME = BIOWASM_WORKING_DIR + 'sequences.fastq.gz';
+export const TRIMMED_SEQUENCES_FILE_NAME = BIOWASM_WORKING_DIR + 'trimmed-sequences.fastq.gz';
 export const DEFAULT_VALS = {
 	minBaseQuality: 20,
 	minBaseQualityDefault: 20,
@@ -42,12 +41,13 @@ export const DEFAULT_INPUT_STATE = {
 
 	// ------- User input -------
 	preloadedRef: undefined,
-	refFile: undefined,
-	refFileValid: true,
+	refFiles: undefined,
+	refFilesValid: true,
 
-	alignmentFiles: undefined,
-	alignmentFilesAreFASTQ: false,
-	alignmentFilesValid: true,
+	exampleDataLoaded: false,
+	inputFiles: undefined,
+	inputFilesAreFASTQ: false,
+	inputFilesValid: true,
 
 	// ------- Fastp input -------
 	trimInput: false,

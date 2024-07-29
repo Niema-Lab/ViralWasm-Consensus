@@ -17,11 +17,11 @@ test('run benchmark - ' + 1000000 + ', run ' + 1, async ({ page, browserName }) 
 	await runBenchmark(page, browserName, ['./e2e/data/reads.' + 500000 + '.1.fastq.gz', './e2e/data/reads.' + 500000 + '.2.fastq.gz'], './e2e/data/NC_045512.fas', 1000000 + '.' + 1 + '/', '1000000', 1, 300000);
 });
 
-const runBenchmark = async (page, browserName: string, alignmentFiles: string[], referenceFile: string, downloadedLocation: string, sequenceSize: string, run: number, runTimeout: number) => {
+const runBenchmark = async (page, browserName: string, inputFiles: string[], referenceFile: string, downloadedLocation: string, sequenceSize: string, run: number, runTimeout: number) => {
 	test.setTimeout(runTimeout + 60000);
 	await page.goto('/');
 	await expect(page.getByTestId('output-text')).toHaveValue(/ViralWasm-Consensus loaded./, { timeout: 15000 });
-	await page.getByTestId('alignment-files').setInputFiles(alignmentFiles);
+	await page.getByTestId('input-files').setInputFiles(inputFiles);
 	await page.getByTestId('reference-file').setInputFiles(referenceFile);
 	await page.getByTestId('trim-input-fastq').check();
 	await page.getByTestId('trim-front-1').fill('5');

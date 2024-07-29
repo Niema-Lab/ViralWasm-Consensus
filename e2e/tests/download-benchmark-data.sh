@@ -11,7 +11,7 @@ cp ../../public/data/Reference-Genomes/NC_045512/NC_045512.fas NC_045512.fas
 for n in 10000 20000 40000 100000 200000 400000; do
 	for r in $(seq 1 $TEST_COUNT); do
 		seed=$(($r * 100))
-		seqtk sample -s$seed reads.fastq.gz $n | gzip >reads.$n.$r.fastq.gz
+		seqtk sample -s $seed reads.fastq.gz $n | gzip >reads.$n.$r.fastq.gz
 	done
 done
 
