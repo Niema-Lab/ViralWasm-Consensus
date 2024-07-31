@@ -960,7 +960,7 @@ export class App extends Component {
 							<div className="d-flex flex-column mb-4">
 								<label htmlFor="reference-file" className="form-label">Reference File (FASTA)<span className="text-danger"> *</span></label>
 								<div className="input-group">
-									<input className={`form-control ${!this.state.refFilesValid && 'is-invalid'}`} type="file" id="reference-file" data-testid="reference-file" onChange={this.selectRefFiles} />
+									<input className={`form-control ${!this.state.refFilesValid && 'is-invalid'}`} type="file" multiple id="reference-file" data-testid="reference-file" onChange={this.selectRefFiles} />
 									<button className="btn btn-outline-danger" type="button" id="reference-file-addon" onClick={this.clearRefFiles}><i className="bi bi-trash"></i></button>
 								</div>
 							</div>
