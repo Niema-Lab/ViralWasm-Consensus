@@ -27,12 +27,12 @@
     "@types/node": "^20.14.12",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react-swc": "^3.7.0",
+    "@vitejs/plugin-react-swc": "^3.9.0",
     "eslint": "^8.38.0",
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-react-refresh": "^0.4.5",
     "http-server": "^14.1.1",
-    "vite": "^5.4.6"
+    "vite": "^6.3.3"
   }
 }
