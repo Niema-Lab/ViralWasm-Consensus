@@ -16,7 +16,7 @@
     "@zip.js/zip.js": "^2.7.72",
     "bootstrap": "^5.3.7",
     "bootstrap-icons": "^1.13.1",
-    "marked": "^16.1.2",
+    "marked": "^16.2.0",
     "pako": "^2.1.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
