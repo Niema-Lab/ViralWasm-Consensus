@@ -14,7 +14,7 @@
   "dependencies": {
     "@gera2ld/tarjs": "^0.3.1",
     "@zip.js/zip.js": "^2.7.72",
-    "bootstrap": "^5.3.7",
+    "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
     "marked": "^16.2.0",
     "pako": "^2.1.0",
