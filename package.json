@@ -20,7 +20,7 @@
     "pako": "^2.1.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.3",
-    "sass": "^1.97.1"
+    "sass": "^1.97.2"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
