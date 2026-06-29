@@ -1,9 +1,9 @@
 // TODO: PWA? 
 import React, { Component } from 'react'
-import Pako from 'pako';
 import { marked } from 'marked';
 import { TarWriter } from '@gera2ld/tarjs';
 import { BlobWriter, ZipWriter } from "@zip.js/zip.js";
+import * as Pako from "pako";
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "bootstrap-icons/font/bootstrap-icons.css";
